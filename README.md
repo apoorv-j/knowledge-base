@@ -9,5 +9,6 @@ Live site: https://apoorv-j.github.io/knowledge-base/
 | Topic | Guide |
 |---|---|
 | JavaScript | [Async orchestration](https://apoorv-j.github.io/knowledge-base/async-orchestration.html) |
+| JavaScript | [Closures, composition & timing](https://apoorv-j.github.io/knowledge-base/closures-timing.html) |
 
 Each guide is a single self-contained HTML file. To add one, drop the file in the repo root and add a link to it in `index.html` and this table.

@@ -1,0 +1,915 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Closures, Composition &amp; Timing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky problem index on the left, long-form study column on the right; a timeline lab sits up top as the one interactive centrepiece. */
+:root {
+  --bg: #f2f4f8; --surface: #ffffff; --ink: #18212e; --muted: #5a6575; --line: #d7dde6;
+  --accent: #2f4fd6; --accent-soft: #e4e9fc; --ok: #1d8556; --fail: #c2410c; --wait: #a86f12; --code-bg: #eef1f6; --skip: #c3cad4;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e131a; --surface: #151c26; --ink: #e5eaf1; --muted: #97a2b2; --line: #263040;
+  --accent: #8fa6ff; --accent-soft: #1f2a48; --ok: #4cc38a; --fail: #f0875c; --wait: #e2b24c; --code-bg: #111821; --skip: #3a4556; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #151c26; --ink: #e5eaf1; --muted: #97a2b2; --line: #263040;
+  --accent: #8fa6ff; --accent-soft: #1f2a48; --ok: #4cc38a; --fail: #f0875c; --wait: #e2b24c; --code-bg: #111821; --skip: #3a4556; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--font-body); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 80px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-inline: 16px; } }
+
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 26px; font-weight: 700; }
+h3 { font-size: 15px; font-family: var(--font-body); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+p { margin: 0; max-width: 68ch; }
+code { font-family: var(--font-mono); font-size: .9em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* index */
+aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; display: flex; flex-direction: column; gap: 14px; }
+aside .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+aside nav { display: flex; flex-direction: column; gap: 2px; }
+aside nav a { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; padding: 5px 8px; border-radius: 6px; font-size: 14px; }
+aside nav a:hover { background: var(--accent-soft); }
+aside nav a .dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--muted); flex: none; }
+aside nav a.done .dot { background: var(--ok); border-color: var(--ok); }
+.progress { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) {
+  aside { position: static; }
+  aside nav { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  aside nav a { white-space: nowrap; border: 1px solid var(--line); background: var(--surface); }
+}
+
+main { display: flex; flex-direction: column; gap: 56px; min-width: 0; }
+.intro { display: flex; flex-direction: column; gap: 14px; }
+.intro .lede { font-size: 17px; color: var(--muted); }
+
+/* building blocks */
+.blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.block { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.block .name { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+.block .uses { font-size: 13px; color: var(--muted); }
+.block pre { margin: 0; }
+
+/* lab */
+.lab { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.lab-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: end; }
+.modes { display: flex; flex-wrap: wrap; gap: 6px; }
+.modes button, .btn { font: 500 13px var(--font-body); border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 6px 11px; border-radius: 999px; cursor: pointer; }
+.modes button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn.primary { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 13px; color: var(--muted); }
+.controls label { display: flex; gap: 6px; align-items: center; }
+.controls input[type=number] { width: 54px; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; }
+.mode-note { font-size: 14px; color: var(--muted); min-height: 2.6em; }
+.chart { overflow-x: auto; }
+.lanes { min-width: 520px; display: grid; grid-template-columns: 150px 1fr; row-gap: 8px; column-gap: 12px; position: relative; }
+.lane-label { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.lane-label input[type=range] { width: 70px; }
+.lane-label .tname { font-family: var(--font-mono); font-weight: 500; width: 14px; }
+.lane-label .dur { font-family: var(--font-mono); font-size: 12px; color: var(--muted); width: 44px; font-variant-numeric: tabular-nums; }
+.outcome-toggle { font: 500 11px var(--font-mono); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; cursor: pointer; background: var(--bg); color: var(--ok); }
+.outcome-toggle.fail { color: var(--fail); }
+.track { position: relative; height: 26px; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), var(--line) calc(10% - 1px) 10%); border-radius: 4px; }
+.bar { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; font: 500 11px var(--font-mono); color: var(--surface); display: flex; align-items: center; padding-left: 6px; overflow: hidden; white-space: nowrap; transform-origin: left; }
+.bar.ok { background: var(--ok); } .bar.fail { background: var(--fail); } .bar.ignored { opacity: .35; }
+.skipped { position: absolute; inset: 3px 0; font: 11px var(--font-mono); color: var(--muted); display: flex; align-items: center; padding-left: 6px; }
+.axis { grid-column: 2; display: flex; justify-content: space-between; font: 11px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.marker { position: absolute; top: 0; bottom: 18px; width: 2px; background: var(--accent); pointer-events: none; }
+.playhead { position: absolute; top: 0; bottom: 18px; width: 1px; background: var(--ink); opacity: .5; pointer-events: none; }
+.result { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; font-size: 15px; }
+.pill { font: 600 12px var(--font-body); padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor; }
+.pill.ok { color: var(--ok); } .pill.fail { color: var(--fail); }
+.result .t { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* problems */
+.problem { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 20px; }
+.problem-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: start; border-top: 2px solid var(--ink); padding-top: 14px; }
+.problem-head .title { display: flex; flex-direction: column; gap: 6px; }
+.back { font-size: 14px; text-decoration: none; width: fit-content; }
+.seen { font-size: 12px; color: var(--muted); align-self: center; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 12px; padding: 1px 8px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.tag.block-tag { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.practised { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.core { font-size: 17px; font-family: var(--font-display); font-weight: 500; max-width: 60ch; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+@media (max-width: 720px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+ol, ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+li { max-width: 68ch; }
+.followups li::marker { content: "→  "; color: var(--accent); }
+.codebox { position: relative; min-width: 0; }
+.codebox pre { margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font: 13px/1.55 var(--font-mono); }
+.codebox pre code { background: none; padding: 0; font-size: inherit; }
+.copy { position: absolute; top: 8px; right: 8px; font: 500 12px var(--font-body); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+details.code > summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--accent); width: fit-content; }
+details.code[open] > summary { margin-bottom: 10px; }
+.note { font-size: 14px; color: var(--muted); border-left: 3px solid var(--wait); padding-left: 12px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* event timing lab */
+.presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sliders { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: var(--muted); }
+.sliders label { display: flex; gap: 8px; align-items: center; }
+.sliders output { font-family: var(--font-mono); color: var(--ink); min-width: 52px; font-variant-numeric: tabular-nums; }
+.tlanes { min-width: 560px; display: grid; grid-template-columns: 190px 1fr 56px; row-gap: 6px; column-gap: 12px; position: relative; align-items: center; }
+.tlabel { font-size: 13px; line-height: 1.3; }
+.tlabel small { display: block; color: var(--muted); font-family: var(--font-mono); font-size: 11px; }
+.ttrack { position: relative; height: 24px; border-bottom: 1px solid var(--line); }
+.ttrack.raw { border-bottom-color: var(--muted); }
+.tick { position: absolute; bottom: 0; width: 1px; height: 12px; background: var(--muted); }
+.fire { position: absolute; top: 4px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--accent); font: 500 9px var(--font-mono); color: var(--surface); display: grid; place-items: center; }
+.fire.hidden { opacity: 0; }
+.count { font: 12px var(--font-mono); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.tgroup { grid-column: 1 / -1; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; padding-top: 8px; }
+.taxis { grid-column: 2; display: flex; justify-content: space-between; font: 11px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.tplayhead { position: absolute; top: 0; bottom: 18px; width: 1px; background: var(--ink); opacity: .5; pointer-events: none; }
+.pad { display: grid; place-items: center; gap: 6px; border: 2px dashed var(--accent); border-radius: 12px; padding: 22px; background: var(--accent-soft); color: var(--accent); font-weight: 600; cursor: pointer; user-select: none; touch-action: manipulation; text-align: center; }
+.pad small { font-weight: 400; color: var(--muted); }
+</style>
+
+<div class="wrap">
+<aside>
+  <div class="label">Closures, composition &amp; timing</div>
+  <div class="progress" id="progress"></div>
+  <nav id="index"></nav>
+</aside>
+
+<main>
+<section class="intro">
+  <a class="back" href="./">← Knowledge base</a>
+  <h1>Closures, composition &amp; timing</h1>
+  <p class="lede">Eleven small utilities that show up everywhere in JavaScript: toggles and samplers, memoize, currying, pipe and compose, chainable APIs, debounce, throttle and timer bookkeeping. Each has the core idea, a tested solution, the edge cases that break naive versions, and where to take it next.</p>
+  <p>They all rest on one fact: a function keeps access to the variables around it after the outer function has returned. Three patterns come out of that.</p>
+</section>
+
+<section class="blocks" aria-label="Building blocks">
+  <div class="block">
+    <div class="name">Private state</div>
+    <p class="uses">A counter, cache or timer ID lives in the outer function. The returned function reads and updates it on every call, and nothing outside can touch it.</p>
+    <p class="uses">Used in: toggle, sampler, once, memoize, debounce, throttle, clearAllTimeout</p>
+  </div>
+  <div class="block">
+    <div class="name">Collect until ready</div>
+    <p class="uses">Keep returning a new function that remembers the arguments so far. Act once you have enough, or when a stop signal arrives.</p>
+    <p class="uses">Used in: curry, infinite sum, placeholder curry, pipe and compose</p>
+  </div>
+  <div class="block">
+    <div class="name">Return the receiver</div>
+    <p class="uses">Every method returns the object it was called on, so calls chain. For async chains, record the steps first and run them later.</p>
+    <p class="uses">Used in: calculator, computeAmount, async person chain</p>
+  </div>
+</section>
+
+<section class="lab" id="lab" aria-labelledby="lab-title">
+  <div style="display:flex;flex-direction:column;gap:4px">
+    <h2 id="lab-title">Event timing lab</h2>
+    <p style="color:var(--muted);font-size:14px">Grey ticks are raw events. Blue dots are the moments your function actually runs, numbered by which event's arguments it received. This is the guide's own debounce and throttle code running on a simulated clock.</p>
+  </div>
+  <div class="presets" role="group" aria-label="Event pattern">
+    <span style="font-size:13px;color:var(--muted)">Events:</span>
+    <button type="button" class="btn" data-preset="typing">Typing bursts</button>
+    <button type="button" class="btn" data-preset="scroll">Continuous scroll</button>
+    <button type="button" class="btn" data-preset="clicks">Sparse clicks</button>
+    <button type="button" class="btn primary" id="record">Record your own</button>
+  </div>
+  <div class="pad" id="pad" hidden tabindex="0" role="button" aria-label="Tap area. Tap or press space to create events.">
+    <span id="pad-text">Tap here (or press Space) as fast or slow as you like</span>
+    <small id="pad-sub">Recording stops 1.5 seconds after your last tap</small>
+  </div>
+  <div class="sliders">
+    <label for="wait">wait <input type="range" id="wait" min="100" max="800" step="50" value="300"><output id="wait-out">300ms</output></label>
+    <label for="maxwait">maxWait <input type="range" id="maxwait" min="200" max="1500" step="100" value="700"><output id="maxwait-out">700ms</output></label>
+    <button type="button" class="btn" id="replay">Replay</button>
+  </div>
+  <div class="chart"><div class="tlanes" id="tlanes"></div></div>
+</section>
+
+
+<article class="problem" id="closure-basics" data-short="Toggle, sampler, once">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Toggle, sampler and once</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Zeta (sampler)</span><span class="tag">SDE2 problem set (toggle)</span><span class="tag block-tag">Private state</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-closure-basics"> Practised</label>
+  </div>
+  <p class="core">Each returns a new function that carries a little private state: a position, a call count, or a "has it run" flag.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li><code>toggle(...values)</code>: keep an index in the closure and advance it with modulo on each call.</li><li><code>sampler(fn, n)</code>: count calls and only forward every nth one to <code>fn</code>.</li><li><code>once(fn)</code>: a boolean flag plus the cached result. Later calls return the first result.</li><li>Forward <code>this</code> and arguments with <code>fn.apply(this, args)</code> so the wrapper works as a method too.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Each call to <code>toggle()</code> must create independent state; two toggles should not share a position.</li><li><code>toggle()</code> with no values would divide by zero in the modulo. Fail loudly instead.</li><li><code>once</code> should drop its reference to <code>fn</code> after running so large closures can be collected.</li><li>If the first call to a <code>once</code> function throws, decide whether a retry is allowed (this version marks it done first, so it is not).</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Add a <code>reset()</code> method to the sampler.</li><li>Write <code>before(n, fn)</code> and <code>after(n, fn)</code> from lodash using the same counter pattern.</li><li>Why does a closure-based counter survive between calls while a local variable in a normal function does not?</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function toggle(...values) {
+  if (values.length === 0) throw new TypeError('toggle needs at least one value');
+  let i = -1;
+  return () =&gt; {
+    i = (i + 1) % values.length;
+    return values[i];
+  };
+}
+
+function sampler(fn, every) {
+  let calls = 0;
+  return function (...args) {
+    if (++calls % every === 0) return fn.apply(this, args);
+  };
+}
+
+function once(fn) {
+  let done = false;
+  let result;
+  return function (...args) {
+    if (!done) {
+      done = true;
+      result = fn.apply(this, args);
+      fn = null; // let the original function be garbage collected
+    }
+    return result;
+  };
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="memoize" data-short="Memoize">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Memoize with a key resolver and LRU limit</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Uber (part 2)</span><span class="tag">SDE1 practice set</span><span class="tag block-tag">Private state</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-memoize"> Practised</label>
+  </div>
+  <p class="core">Store results in a Map keyed by the arguments. The interesting decisions are how to build the key and when to evict.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Build a key from the arguments. <code>JSON.stringify(args)</code> is a fine default for primitives.</li><li>On a hit, return the cached value and move the key to the end of the Map so it counts as recently used.</li><li>On a miss, call the function, store the result, and if the cache is over <code>maxSize</code>, delete the first key (the least recently used).</li><li>Expose the cache on the function so callers can inspect or clear it.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li><code>JSON.stringify</code> cannot tell <code>undefined</code> from missing, drops functions, and gives the same key for two different objects with the same contents. Allow a custom key function.</li><li>Object identity keys work with a <code>Map</code> (or a <code>WeakMap</code> for single-object arguments so entries can be garbage collected).</li><li>Caching a function that depends on <code>this</code> or on outside state gives stale answers.</li><li>Without a size limit, a memoized function called with many distinct inputs is a memory leak.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Add a time-to-live per entry.</li><li>Memoize async functions so that concurrent calls share one in-flight promise (see the async guide).</li><li>Compare with <code>React.useMemo</code>, which only remembers the last result.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function memoize(fn, { key = (...args) =&gt; JSON.stringify(args), maxSize = Infinity } = {}) {
+  const cache = new Map();
+  function memoized(...args) {
+    const k = key(...args);
+    if (cache.has(k)) {
+      const value = cache.get(k);
+      cache.delete(k); // move to the end: most recently used
+      cache.set(k, value);
+      return value;
+    }
+    const value = fn.apply(this, args);
+    cache.set(k, value);
+    if (cache.size &gt; maxSize) cache.delete(cache.keys().next().value); // evict least recently used
+    return value;
+  }
+  memoized.cache = cache;
+  return memoized;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="curry" data-short="Curry">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Curry a function with a fixed number of arguments</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Impact Analytics</span><span class="tag">SDE1 practice set</span><span class="tag block-tag">Collect until ready</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-curry"> Practised</label>
+  </div>
+  <p class="core">Keep collecting arguments across calls until there are as many as the function expects, then call it.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Read the expected count from <code>fn.length</code>, but allow it to be passed in, because default and rest parameters are not counted.</li><li>If enough arguments have arrived, call the original function.</li><li>Otherwise return a function that merges the new arguments with the ones already collected and tries again.</li><li>Because each step builds a new array, partial applications can be reused safely.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Accept several arguments per call: <code>add(1)(2, 3)</code> and <code>add(1, 2)(3)</code> should both work.</li><li><code>fn.length</code> is 0 for <code>(...args) =&gt; {}</code>, so a rest-parameter function would be called immediately.</li><li>Do not mutate the collected array; <code>const p = add(1)</code> must stay usable after <code>p(2)(3)</code>.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Curry with placeholders (two sections down).</li><li>Write <code>uncurry</code> or a partial-application helper like <code>bind</code> without <code>this</code>.</li><li>When is currying actually useful in UI code? (Building event handlers and selectors with fixed configuration.)</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function curry(fn, arity = fn.length) {
+  return function curried(...args) {
+    if (args.length &gt;= arity) return fn.apply(this, args);
+    return (...more) =&gt; curried.apply(this, [...args, ...more]);
+  };
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="infinite-sum" data-short="Infinite curry sum">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Infinite curry: sum(1)(2)(3)()</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Zepto</span><span class="tag">MakeMyTrip</span><span class="tag">Impact Analytics</span><span class="tag">SDE2 problem sets</span><span class="tag block-tag">Collect until ready</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-infinite-sum"> Practised</label>
+  </div>
+  <p class="core">There is no fixed length, so the caller has to say "done". Either an empty call ends it, or coercion to a number reads the total.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Empty-call version: <code>sum(a)</code> returns a function. Given <code>b</code>, it returns <code>sum(a + b)</code>; given nothing, it returns <code>a</code>.</li><li>Coercion version: return a function with <code>Symbol.toPrimitive</code> set, so <code>+sum(1)(2)</code> or <code>sum(1)(2) == 3</code> produces the total.</li><li>The coercion version can accept several arguments per call by reducing them into the running total.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li><code>sum()</code> with no arguments at all should return 0, not a function.</li><li>Passing <code>0</code> must not end the chain; check for <code>undefined</code>, not falsiness.</li><li>The coercion version is not a real number: <code>typeof</code> is still <code>"function"</code>, and strict equality with 3 is false.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Make it generic: <code>infiniteCurry(reducer, initial)</code>.</li><li>Support <code>sum(1)(2).value()</code> as an explicit terminator.</li><li>Explain how <code>valueOf</code>, <code>toString</code> and <code>Symbol.toPrimitive</code> interact during coercion.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>// sum(1)(2)(3)() === 6
+function sum(a) {
+  if (a === undefined) return 0; // sum() on its own
+  return function next(b) {
+    if (b === undefined) return a;
+    return sum(a + b);
+  };
+}
+
+// sum(1)(2, 3)(4) == 10, read by coercion: +sumV(1)(2) === 3
+function sumV(...args) {
+  const total = args.reduce((s, x) =&gt; s + x, 0);
+  const next = (...more) =&gt; sumV(total, ...more);
+  next[Symbol.toPrimitive] = () =&gt; total;
+  return next;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="placeholder-curry" data-short="Placeholder curry">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Curry with placeholders</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Tekion (Staff)</span><span class="tag block-tag">Collect until ready</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-placeholder-curry"> Practised</label>
+  </div>
+  <p class="core">A placeholder reserves a slot to be filled later, so arguments can arrive out of order. The function runs only when the first n slots hold real values.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Use a unique <code>Symbol</code> as the placeholder so no real argument can collide with it.</li><li>The function is ready when there are at least <code>arity</code> arguments and none of the first <code>arity</code> is a placeholder.</li><li>When more arguments arrive, fill placeholders from left to right first, then append the rest.</li><li>Recurse with the merged list until it is ready.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li><code>join(_, _, 3)(1)(2)</code> fills holes in order across several calls.</li><li>Placeholders beyond the arity should not block the call.</li><li>Use a fresh array on every step so partial applications stay reusable.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Let the placeholder be configurable, like <code>lodash.curry.placeholder</code>.</li><li>Support placeholders in <code>partial</code> and <code>bind</code>-style helpers too.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>const _ = Symbol('placeholder');
+
+function curryWithPlaceholder(fn, arity = fn.length) {
+  return function curried(...args) {
+    const ready = args.length &gt;= arity &amp;&amp; args.slice(0, arity).every((a) =&gt; a !== _);
+    if (ready) return fn.apply(this, args);
+    return (...more) =&gt; {
+      // fill holes left to right, then append whatever is left over
+      const merged = args.map((a) =&gt; (a === _ &amp;&amp; more.length ? more.shift() : a));
+      return curried.apply(this, [...merged, ...more]);
+    };
+  };
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="pipe" data-short="Pipe &amp; compose">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Pipe, compose, async pipe and pipe over an object</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Flipkart</span><span class="tag">Razorpay</span><span class="tag">Abhibus</span><span class="tag">Adobe (async compose)</span><span class="tag block-tag">Collect until ready</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-pipe"> Practised</label>
+  </div>
+  <p class="core">Pipe passes a value through functions left to right; compose does the same right to left. Both are a single <code>reduce</code>.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li><code>pipe(...fns)</code> returns a function of the input that reduces over <code>fns</code>, feeding each result into the next function.</li><li><code>compose</code> is <code>pipe</code> with the list reversed. Copy before reversing so the caller's array is untouched.</li><li>Async pipe: start from <code>Promise.resolve(input)</code> and chain <code>.then(fn)</code> for each function, so sync and async steps can mix.</li><li>Object pipe: walk a nested object, call every function with the same arguments, and return an object with the same shape.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li><code>pipe()</code> with no functions should return the input unchanged.</li><li>In the async version, a rejection anywhere skips the remaining steps and rejects the whole pipe.</li><li>In the object version, keep non-function values as they are, and handle arrays as well as plain objects.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Let each step see the original input as well as the previous result.</li><li>Add a tap or logging step that does not change the value.</li><li>How does this relate to middleware chains like Express or Redux? (Each middleware wraps the next.)</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>const pipe = (...fns) =&gt; (input) =&gt; fns.reduce((acc, fn) =&gt; fn(acc), input);
+const compose = (...fns) =&gt; pipe(...[...fns].reverse());
+const pipeAsync = (...fns) =&gt; (input) =&gt; fns.reduce((p, fn) =&gt; p.then(fn), Promise.resolve(input));
+
+// Apply the same arguments to every function in a nested object, keeping its shape.
+function pipeObject(obj) {
+  return (...args) =&gt; {
+    const out = Array.isArray(obj) ? [] : {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (typeof v === 'function') out[k] = v(...args);
+      else if (v !== null &amp;&amp; typeof v === 'object') out[k] = pipeObject(v)(...args);
+      else out[k] = v;
+    }
+    return out;
+  };
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="chaining" data-short="Method chaining">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Method chaining: calculator and computeAmount</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">NAVI</span><span class="tag">Birdeye</span><span class="tag block-tag">Return the receiver</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-chaining"> Practised</label>
+  </div>
+  <p class="core">Every method changes some state and returns the object again, so the next call can be written right after it. A final method reads the result.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Class version: methods update <code>this.total</code> and <code>return this</code>.</li><li>Closure version: keep the running total in a variable and return the same <code>api</code> object from every method.</li><li>End the chain with an explicit reader such as <code>value()</code>.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Arrow functions as methods break the class version, because their <code>this</code> is not the instance.</li><li>Validate inputs where they arrive: dividing by zero should throw at <code>divide(0)</code>, not later.</li><li>Shared mutable state means two chains from the same instance affect each other. Return a new instance from each method if you need immutability.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Make it immutable: each method returns a new calculator.</li><li>Add <code>undo()</code> by storing a history of operations.</li><li>Where do you see this pattern in real libraries? (jQuery, query builders, test assertion libraries.)</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>class Calculator {
+  constructor(value = 0) { this.total = value; }
+  add(n) { this.total += n; return this; }
+  subtract(n) { this.total -= n; return this; }
+  multiply(n) { this.total *= n; return this; }
+  divide(n) {
+    if (n === 0) throw new RangeError('Division by zero');
+    this.total /= n;
+    return this;
+  }
+  value() { return this.total; }
+}
+
+// Same idea with a closure instead of a class
+function computeAmount() {
+  let total = 0;
+  const api = {
+    thousand(n) { total += n * 1e3; return api; },
+    lacs(n) { total += n * 1e5; return api; },
+    crore(n) { total += n * 1e7; return api; },
+    value() { return total; },
+  };
+  return api;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="async-chaining" data-short="Async chaining">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Async method chaining with sleep and sleepFirst</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Course JS track</span><span class="tag block-tag">Return the receiver</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-async-chaining"> Practised</label>
+  </div>
+  <p class="core">Chain methods only record steps in a queue. Execution starts on a later tick, after the whole chain has been written, and runs the queue in order.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Keep an array of step functions. Synchronous steps log something; <code>sleep(ms)</code> adds a step that returns a timer promise.</li><li>Every method pushes its step and returns the same object, so the chain keeps going.</li><li>Start a runner with <code>setTimeout(…, 0)</code> so every chained call has registered first, then <code>await</code> each step in turn.</li><li><code>sleepFirst(ms)</code> uses <code>unshift</code> so its wait jumps ahead of everything already queued, including the greeting.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Starting the runner synchronously would execute steps before the rest of the chain is registered.</li><li>Use <code>while (steps.length) await steps.shift()()</code> so steps added while running are still picked up.</li><li>Several <code>sleepFirst</code> calls stack in reverse order, because each one is put at the very front.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Make the chain awaitable by adding a <code>then</code> method (a thenable).</li><li>Add a priority to every step instead of a single "first" escape hatch.</li><li>Add cancellation that clears pending timers.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>// person('Asha').eat('idli').sleep(1000).eat('dosa').sleepFirst(500)
+function person(name, log = console.log) {
+  const steps = [() =&gt; log(`Hi, I am ${name}`)];
+  const wait = (ms) =&gt; () =&gt; new Promise((resolve) =&gt; setTimeout(resolve, ms));
+  const api = {
+    eat(food) { steps.push(() =&gt; log(`${name} eats ${food}`)); return api; },
+    sleep(ms) { steps.push(wait(ms)); return api; },
+    sleepFirst(ms) { steps.unshift(wait(ms)); return api; }, // jumps the queue
+  };
+  // start after the synchronous chain has finished registering steps
+  setTimeout(async () =&gt; {
+    while (steps.length) await steps.shift()();
+  }, 0);
+  return api;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="debounce" data-short="Debounce">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Debounce with leading, trailing, maxWait, cancel and flush</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">MoEngage</span><span class="tag">Arctic Wolf</span><span class="tag">Tekion</span><span class="tag">PayPay</span><span class="tag">Abhibus</span><span class="tag">Hiver (as a hook)</span><span class="tag block-tag">Private state</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-debounce"> Practised</label>
+  </div>
+  <p class="core">Wait until calls stop for <code>wait</code> ms, then run once with the latest arguments. Options decide whether the first call of a burst also runs, and whether a very long burst forces a call anyway.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Every call stores its arguments and <code>this</code>, clears the timer and starts a new one. When the timer finally fires, the burst is over.</li><li><code>leading</code>: if no timer was running, this call starts a burst, so run it right away and clear the stored arguments.</li><li><code>trailing</code>: when the burst ends, run only if there are stored arguments, so a single leading call does not run twice.</li><li><code>maxWait</code>: a second timer started at the first call of a burst forces a run if the burst lasts that long.</li><li><code>cancel</code> clears both timers and the stored arguments; <code>flush</code> ends the burst immediately.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>With leading and trailing both on, one isolated call must run exactly once. Use the lab with sparse clicks to see it.</li><li>Keep the latest arguments, not the first ones. The trailing call should see the final text in a search box.</li><li>Preserve <code>this</code> so it works as an object method or class field.</li><li>The return value of a debounced call is the result of the previous run, since the current one has not happened yet.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Write <code>useDebounce</code> and <code>useDebouncedCallback</code> hooks. Where should the timer live so re-renders do not reset it?</li><li>Return a promise that resolves with the eventual result.</li><li>Why is debounce plus a request ID still needed to avoid showing stale search results?</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function debounce(fn, wait, { leading = false, trailing = true, maxWait } = {}) {
+  let timer = null;     // fires when the burst goes quiet
+  let maxTimer = null;  // forces a call during a long burst
+  let pendingArgs = null;
+  let pendingThis = null;
+  let result;
+
+  const invoke = () =&gt; {
+    const args = pendingArgs;
+    const ctx = pendingThis;
+    pendingArgs = pendingThis = null;
+    result = fn.apply(ctx, args);
+  };
+  const endBurst = () =&gt; {
+    clearTimeout(maxTimer);
+    timer = maxTimer = null;
+    if (trailing &amp;&amp; pendingArgs) invoke();
+  };
+
+  function debounced(...args) {
+    const newBurst = timer === null;
+    pendingArgs = args;
+    pendingThis = this;
+    if (newBurst &amp;&amp; leading) invoke(); // the leading call uses up these arguments
+    clearTimeout(timer);
+    timer = setTimeout(endBurst, wait);
+    if (maxWait !== undefined &amp;&amp; maxTimer === null) {
+      maxTimer = setTimeout(() =&gt; {
+        maxTimer = null;
+        if (pendingArgs) invoke();
+      }, maxWait);
+    }
+    return result;
+  }
+
+  debounced.cancel = () =&gt; {
+    clearTimeout(timer);
+    clearTimeout(maxTimer);
+    timer = maxTimer = null;
+    pendingArgs = pendingThis = null;
+  };
+  debounced.flush = () =&gt; {
+    if (timer !== null) {
+      clearTimeout(timer);
+      endBurst();
+    }
+    return result;
+  };
+  return debounced;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="throttle" data-short="Throttle">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Throttle with leading and trailing options</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Google</span><span class="tag">Tekion</span><span class="tag">Arctic Wolf</span><span class="tag block-tag">Private state</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-throttle"> Practised</label>
+  </div>
+  <p class="core">Run at most once per <code>wait</code> window. The leading call runs immediately; the latest call made during the window can run when it closes.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>If no window is open, run now (when <code>leading</code>) and open a window with a timer.</li><li>Calls during the window only overwrite the stored arguments.</li><li>When the window closes, run with the stored arguments if <code>trailing</code> is on, and open a new window for that call. Otherwise mark the throttle idle.</li><li>With <code>leading: false</code>, the first call is stored and runs when the first window closes.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>A trailing run must open a fresh window, or a call right after it would run too soon.</li><li>Turning off both leading and trailing means the function never runs. Reject that configuration or document it.</li><li>Throttle by timer drifts slightly under load. A timestamp check (<code>Date.now() - last &gt;= wait</code>) is an alternative for the leading edge.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Throttle with <code>requestAnimationFrame</code> for scroll and resize work.</li><li>Throttle a queue of tasks so N run per second (a rate limiter).</li><li>When would you choose throttle over debounce? (Continuous feedback such as scroll position, versus a final value such as a search query.)</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function throttle(fn, wait, { leading = true, trailing = true } = {}) {
+  let timer = null;
+  let pendingArgs = null;
+  let pendingThis = null;
+  let result;
+
+  const cooldown = () =&gt; {
+    timer = setTimeout(() =&gt; {
+      if (trailing &amp;&amp; pendingArgs) {
+        result = fn.apply(pendingThis, pendingArgs);
+        pendingArgs = pendingThis = null;
+        cooldown(); // a trailing call opens a new window
+      } else {
+        timer = null;
+      }
+    }, wait);
+  };
+
+  function throttled(...args) {
+    if (timer === null) {
+      if (leading) result = fn.apply(this, args);
+      else { pendingArgs = args; pendingThis = this; }
+      cooldown();
+    } else {
+      pendingArgs = args; // keep only the latest call
+      pendingThis = this;
+    }
+    return result;
+  }
+
+  throttled.cancel = () =&gt; {
+    clearTimeout(timer);
+    timer = null;
+    pendingArgs = pendingThis = null;
+  };
+  return throttled;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="clear-all-timeout" data-short="clearAllTimeout">
+  <div class="problem-head">
+    <div class="title">
+      <h2>clearAllTimeout</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Meta</span><span class="tag">Fancode</span><span class="tag block-tag">Private state</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-clear-all-timeout"> Practised</label>
+  </div>
+  <p class="core">Wrap <code>setTimeout</code> and <code>clearTimeout</code> so every live timer ID is tracked in a Set. Clearing all is then a loop.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Keep references to the original functions before replacing them.</li><li>The new <code>setTimeout</code> wraps the callback so the ID removes itself from the Set when it fires, then records the ID.</li><li>The new <code>clearTimeout</code> removes the ID from the Set and calls the original.</li><li><code>clearAllTimeout</code> clears every tracked ID and empties the Set. Return a function that restores the originals.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Remove IDs when timers fire, or the Set grows forever.</li><li>Pass extra arguments through: <code>setTimeout(fn, ms, a, b)</code> must still call <code>fn(a, b)</code>.</li><li>In Node, timer IDs are objects rather than numbers. A Set handles both.</li><li>Patching globals affects every library on the page. Prefer a local timer manager in real code.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Do the same for <code>setInterval</code>.</li><li>Write a scoped version: <code>createTimerScope()</code> returning its own <code>setTimeout</code> and <code>clearAll</code>, without touching globals.</li><li>How do testing libraries fake timers? (They replace the same globals with a virtual clock, like the lab on this page.)</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function trackTimeouts(target = globalThis) {
+  const ids = new Set();
+  const originalSet = target.setTimeout;
+  const originalClear = target.clearTimeout;
+
+  target.setTimeout = function (callback, ms, ...args) {
+    const id = originalSet.call(target, (...a) =&gt; {
+      ids.delete(id); // a timer that has fired no longer needs clearing
+      callback(...a);
+    }, ms, ...args);
+    ids.add(id);
+    return id;
+  };
+  target.clearTimeout = function (id) {
+    ids.delete(id);
+    return originalClear.call(target, id);
+  };
+  target.clearAllTimeout = () =&gt; {
+    for (const id of ids) originalClear.call(target, id);
+    ids.clear();
+  };
+
+  // undo the patch
+  return () =&gt; {
+    target.setTimeout = originalSet;
+    target.clearTimeout = originalClear;
+    delete target.clearAllTimeout;
+  };
+}</code></pre></div>
+  </details>
+</article>
+</main>
+</div>
+
+<script>
+// ---------- index, progress, copy (shared with other guides) ----------
+const problems = [...document.querySelectorAll('.problem')];
+const index = document.getElementById('index');
+const KEY = 'closures-timing-practised';
+let practised = {};
+try { practised = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(practised)); } catch (e) {} }
+function refreshProgress() {
+  const n = problems.filter(p => practised[p.id]).length;
+  document.getElementById('progress').textContent = n + ' of ' + problems.length + ' practised';
+  problems.forEach(p => document.querySelector('a[href="#' + p.id + '"]').classList.toggle('done', !!practised[p.id]));
+}
+problems.forEach(p => {
+  const a = document.createElement('a');
+  a.href = '#' + p.id;
+  a.innerHTML = '<span class="dot"></span><span></span>';
+  a.lastChild.textContent = p.dataset.short;
+  index.appendChild(a);
+  const box = p.querySelector('.practised input');
+  box.checked = !!practised[p.id];
+  box.addEventListener('change', () => { practised[p.id] = box.checked; save(); refreshProgress(); });
+});
+refreshProgress();
+document.querySelectorAll('.codebox').forEach(box => {
+  const btn = box.querySelector('.copy');
+  btn.addEventListener('click', () => {
+    const text = box.querySelector('code').innerText;
+    const done = () => { btn.textContent = 'Copied'; setTimeout(() => (btn.textContent = 'Copy'), 1400); };
+    const select = () => { const r = document.createRange(); r.selectNodeContents(box.querySelector('code')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Press Ctrl+C'; };
+    try { navigator.clipboard.writeText(text).then(done, select); } catch (e) { select(); }
+  });
+});
+
+// ---------- the guide's own debounce/throttle, bound to a simulated clock ----------
+function timingLib(setTimeout, clearTimeout) {
+function debounce(fn, wait, { leading = false, trailing = true, maxWait } = {}) {
+  let timer = null;     // fires when the burst goes quiet
+  let maxTimer = null;  // forces a call during a long burst
+  let pendingArgs = null;
+  let pendingThis = null;
+  let result;
+
+  const invoke = () => {
+    const args = pendingArgs;
+    const ctx = pendingThis;
+    pendingArgs = pendingThis = null;
+    result = fn.apply(ctx, args);
+  };
+  const endBurst = () => {
+    clearTimeout(maxTimer);
+    timer = maxTimer = null;
+    if (trailing && pendingArgs) invoke();
+  };
+
+  function debounced(...args) {
+    const newBurst = timer === null;
+    pendingArgs = args;
+    pendingThis = this;
+    if (newBurst && leading) invoke(); // the leading call uses up these arguments
+    clearTimeout(timer);
+    timer = setTimeout(endBurst, wait);
+    if (maxWait !== undefined && maxTimer === null) {
+      maxTimer = setTimeout(() => {
+        maxTimer = null;
+        if (pendingArgs) invoke();
+      }, maxWait);
+    }
+    return result;
+  }
+
+  debounced.cancel = () => {
+    clearTimeout(timer);
+    clearTimeout(maxTimer);
+    timer = maxTimer = null;
+    pendingArgs = pendingThis = null;
+  };
+  debounced.flush = () => {
+    if (timer !== null) {
+      clearTimeout(timer);
+      endBurst();
+    }
+    return result;
+  };
+  return debounced;
+}
+
+function throttle(fn, wait, { leading = true, trailing = true } = {}) {
+  let timer = null;
+  let pendingArgs = null;
+  let pendingThis = null;
+  let result;
+
+  const cooldown = () => {
+    timer = setTimeout(() => {
+      if (trailing && pendingArgs) {
+        result = fn.apply(pendingThis, pendingArgs);
+        pendingArgs = pendingThis = null;
+        cooldown(); // a trailing call opens a new window
+      } else {
+        timer = null;
+      }
+    }, wait);
+  };
+
+  function throttled(...args) {
+    if (timer === null) {
+      if (leading) result = fn.apply(this, args);
+      else { pendingArgs = args; pendingThis = this; }
+      cooldown();
+    } else {
+      pendingArgs = args; // keep only the latest call
+      pendingThis = this;
+    }
+    return result;
+  }
+
+  throttled.cancel = () => {
+    clearTimeout(timer);
+    timer = null;
+    pendingArgs = pendingThis = null;
+  };
+  return throttled;
+}
+  return { debounce, throttle };
+}
+
+function simulate(build, events) {
+  let now = 0, seq = 0;
+  const timers = [];
+  const vSet = (cb, ms) => { const id = ++seq; timers.push({ id, t: now + Math.max(0, ms || 0), cb }); return id; };
+  const vClear = (id) => { const i = timers.findIndex(x => x.id === id); if (i >= 0) timers.splice(i, 1); };
+  const fired = [];
+  const lib = timingLib(vSet, vClear);
+  const wrapped = build(lib, (i) => fired.push({ t: now, i }));
+  let ei = 0, guard = 0;
+  while (guard++ < 10000) {
+    timers.sort((a, b) => a.t - b.t || a.id - b.id);
+    const tm = timers[0], ev = events[ei];
+    if (ev === undefined && !tm) break;
+    if (tm && (ev === undefined || tm.t <= ev)) { timers.shift(); now = tm.t; tm.cb(); }
+    else { now = ev; wrapped(ei + 1); ei++; }
+  }
+  return fired;
+}
+
+const presets = {
+  typing: [0, 90, 170, 230, 320, 380, 1000, 1080, 1140, 1900, 1960, 2010, 2090, 2150, 2240, 2300, 2370, 2430, 2520],
+  scroll: Array.from({ length: 46 }, (_, i) => i * 50),
+  clicks: [0, 520, 1150, 1280, 2000, 2700],
+};
+let events = presets.typing;
+let current = 'typing';
+
+const lanes = [
+  { group: 'Raw input' },
+  { name: 'Events', raw: true },
+  { group: 'Debounce: wait for a pause' },
+  { name: 'trailing', sub: 'default', build: (L, f, w) => L.debounce(f, w) },
+  { name: 'leading', sub: '{ leading, trailing: false }', build: (L, f, w) => L.debounce(f, w, { leading: true, trailing: false }) },
+  { name: 'leading + trailing', sub: '{ leading: true }', build: (L, f, w) => L.debounce(f, w, { leading: true }) },
+  { name: 'with maxWait', sub: '{ maxWait }', build: (L, f, w, m) => L.debounce(f, w, { maxWait: m }) },
+  { group: 'Throttle: at most once per wait' },
+  { name: 'leading + trailing', sub: 'default', build: (L, f, w) => L.throttle(f, w) },
+  { name: 'leading only', sub: '{ trailing: false }', build: (L, f, w) => L.throttle(f, w, { trailing: false }) },
+  { name: 'trailing only', sub: '{ leading: false }', build: (L, f, w) => L.throttle(f, w, { leading: false }) },
+];
+
+const tl = document.getElementById('tlanes');
+const waitEl = document.getElementById('wait'), maxEl = document.getElementById('maxwait');
+let anim = null;
+
+function render(animate) {
+  const wait = +waitEl.value, maxWait = +maxEl.value;
+  document.getElementById('wait-out').textContent = wait + 'ms';
+  document.getElementById('maxwait-out').textContent = maxWait + 'ms';
+  document.querySelectorAll('[data-preset]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.preset === current)));
+  const results = lanes.map(l => l.build ? simulate((L, f) => l.build(L, f, wait, maxWait), events) : null);
+  const lastT = Math.max(events[events.length - 1] || 0, ...results.filter(Boolean).flat().map(x => x.t));
+  const span = Math.max(1000, Math.ceil((lastT + 150) / 500) * 500);
+  tl.innerHTML = '';
+  lanes.forEach((l, k) => {
+    if (l.group) { const g = document.createElement('div'); g.className = 'tgroup'; g.textContent = l.group; tl.appendChild(g); return; }
+    const label = document.createElement('div'); label.className = 'tlabel';
+    label.textContent = l.name;
+    if (l.sub) { const s = document.createElement('small'); s.textContent = l.sub; label.appendChild(s); }
+    const track = document.createElement('div'); track.className = 'ttrack' + (l.raw ? ' raw' : '');
+    const count = document.createElement('div'); count.className = 'count';
+    if (l.raw) {
+      events.forEach(t => { const d = document.createElement('div'); d.className = 'tick'; d.style.left = (t / span * 100) + '%'; d.dataset.t = t; track.appendChild(d); });
+      count.textContent = events.length;
+    } else {
+      results[k].forEach(f => {
+        const d = document.createElement('div'); d.className = 'fire'; d.style.left = (f.t / span * 100) + '%';
+        d.textContent = f.i; d.dataset.t = f.t; d.title = 'Ran at ' + Math.round(f.t) + 'ms with event #' + f.i;
+        track.appendChild(d);
+      });
+      count.textContent = results[k].length + '×';
+    }
+    tl.append(label, track, count);
+  });
+  const sp = document.createElement('div'); tl.appendChild(sp);
+  const axis = document.createElement('div'); axis.className = 'taxis';
+  for (let i = 0; i <= 4; i++) { const s = document.createElement('span'); s.textContent = Math.round(span * i / 4) + 'ms'; axis.appendChild(s); }
+  tl.appendChild(axis);
+  if (animate) play(span);
+}
+
+function play(span) {
+  if (anim) cancelAnimationFrame(anim);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const first = tl.querySelector('.ttrack');
+  const left = first.offsetLeft, width = first.offsetWidth;
+  const marks = [...tl.querySelectorAll('.fire, .tick')];
+  marks.forEach(m => m.classList.add('hidden'));
+  tl.querySelectorAll('.tick').forEach(m => (m.style.opacity = 0));
+  const head = document.createElement('div'); head.className = 'tplayhead'; tl.appendChild(head);
+  let t0 = null;
+  const frame = ts => {
+    if (t0 == null) t0 = ts;
+    const t = ts - t0; // real time
+    head.style.left = (left + Math.min(1, t / span) * width) + 'px';
+    marks.forEach(m => { if (+m.dataset.t <= t) { m.classList.remove('hidden'); m.style.opacity = ''; } });
+    if (t < span) anim = requestAnimationFrame(frame); else { head.remove(); anim = null; }
+  };
+  anim = requestAnimationFrame(frame);
+}
+
+document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => { current = b.dataset.preset; events = presets[current]; render(true); }));
+waitEl.addEventListener('input', () => render(false));
+maxEl.addEventListener('input', () => render(false));
+document.getElementById('replay').addEventListener('click', () => render(true));
+addEventListener('resize', () => render(false));
+
+// record your own taps
+const pad = document.getElementById('pad');
+let rec = null;
+document.getElementById('record').addEventListener('click', () => {
+  pad.hidden = false; pad.focus();
+  rec = { taps: [], timer: null };
+  document.getElementById('pad-text').textContent = 'Tap here (or press Space) as fast or slow as you like';
+});
+function tap() {
+  if (!rec) return;
+  const now = performance.now();
+  rec.taps.push(now);
+  document.getElementById('pad-text').textContent = rec.taps.length + ' events recorded';
+  clearTimeout(rec.timer);
+  rec.timer = setTimeout(finish, 1500);
+}
+function finish() {
+  const t0 = rec.taps[0];
+  events = rec.taps.map(t => Math.round(t - t0)).filter(t => t <= 8000);
+  presets.custom = events; current = 'custom';
+  rec = null; pad.hidden = true;
+  render(true);
+}
+pad.addEventListener('pointerdown', e => { e.preventDefault(); tap(); });
+pad.addEventListener('keydown', e => { if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); if (!e.repeat) tap(); } });
+
+render(false);
+</script>
