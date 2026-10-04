@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Async Orchestration Playbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky problem index on the left, long-form study column on the right; a timeline lab sits up top as the one interactive centrepiece. */
+:root {
+  --bg: #f2f4f8; --surface: #ffffff; --ink: #18212e; --muted: #5a6575; --line: #d7dde6;
+  --accent: #2f4fd6; --accent-soft: #e4e9fc; --ok: #1d8556; --fail: #c2410c; --wait: #a86f12; --code-bg: #eef1f6; --skip: #c3cad4;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e131a; --surface: #151c26; --ink: #e5eaf1; --muted: #97a2b2; --line: #263040;
+  --accent: #8fa6ff; --accent-soft: #1f2a48; --ok: #4cc38a; --fail: #f0875c; --wait: #e2b24c; --code-bg: #111821; --skip: #3a4556; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #151c26; --ink: #e5eaf1; --muted: #97a2b2; --line: #263040;
+  --accent: #8fa6ff; --accent-soft: #1f2a48; --ok: #4cc38a; --fail: #f0875c; --wait: #e2b24c; --code-bg: #111821; --skip: #3a4556; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--font-body); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 80px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-inline: 16px; } }
+
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 26px; font-weight: 700; }
+h3 { font-size: 15px; font-family: var(--font-body); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+p { margin: 0; max-width: 68ch; }
+code { font-family: var(--font-mono); font-size: .9em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* index */
+aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; display: flex; flex-direction: column; gap: 14px; }
+aside .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+aside nav { display: flex; flex-direction: column; gap: 2px; }
+aside nav a { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; padding: 5px 8px; border-radius: 6px; font-size: 14px; }
+aside nav a:hover { background: var(--accent-soft); }
+aside nav a .dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--muted); flex: none; }
+aside nav a.done .dot { background: var(--ok); border-color: var(--ok); }
+.progress { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) {
+  aside { position: static; }
+  aside nav { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  aside nav a { white-space: nowrap; border: 1px solid var(--line); background: var(--surface); }
+}
+
+main { display: flex; flex-direction: column; gap: 56px; min-width: 0; }
+.intro { display: flex; flex-direction: column; gap: 14px; }
+.intro .lede { font-size: 17px; color: var(--muted); }
+
+/* building blocks */
+.blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.block { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.block .name { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+.block .uses { font-size: 13px; color: var(--muted); }
+.block pre { margin: 0; }
+
+/* lab */
+.lab { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.lab-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: end; }
+.modes { display: flex; flex-wrap: wrap; gap: 6px; }
+.modes button, .btn { font: 500 13px var(--font-body); border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 6px 11px; border-radius: 999px; cursor: pointer; }
+.modes button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn.primary { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 13px; color: var(--muted); }
+.controls label { display: flex; gap: 6px; align-items: center; }
+.controls input[type=number] { width: 54px; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; }
+.mode-note { font-size: 14px; color: var(--muted); min-height: 2.6em; }
+.chart { overflow-x: auto; }
+.lanes { min-width: 520px; display: grid; grid-template-columns: 150px 1fr; row-gap: 8px; column-gap: 12px; position: relative; }
+.lane-label { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.lane-label input[type=range] { width: 70px; }
+.lane-label .tname { font-family: var(--font-mono); font-weight: 500; width: 14px; }
+.lane-label .dur { font-family: var(--font-mono); font-size: 12px; color: var(--muted); width: 44px; font-variant-numeric: tabular-nums; }
+.outcome-toggle { font: 500 11px var(--font-mono); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; cursor: pointer; background: var(--bg); color: var(--ok); }
+.outcome-toggle.fail { color: var(--fail); }
+.track { position: relative; height: 26px; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), var(--line) calc(10% - 1px) 10%); border-radius: 4px; }
+.bar { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; font: 500 11px var(--font-mono); color: var(--surface); display: flex; align-items: center; padding-left: 6px; overflow: hidden; white-space: nowrap; transform-origin: left; }
+.bar.ok { background: var(--ok); } .bar.fail { background: var(--fail); } .bar.ignored { opacity: .35; }
+.skipped { position: absolute; inset: 3px 0; font: 11px var(--font-mono); color: var(--muted); display: flex; align-items: center; padding-left: 6px; }
+.axis { grid-column: 2; display: flex; justify-content: space-between; font: 11px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.marker { position: absolute; top: 0; bottom: 18px; width: 2px; background: var(--accent); pointer-events: none; }
+.playhead { position: absolute; top: 0; bottom: 18px; width: 1px; background: var(--ink); opacity: .5; pointer-events: none; }
+.result { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; font-size: 15px; }
+.pill { font: 600 12px var(--font-body); padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor; }
+.pill.ok { color: var(--ok); } .pill.fail { color: var(--fail); }
+.result .t { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* problems */
+.problem { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 20px; }
+.problem-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: start; border-top: 2px solid var(--ink); padding-top: 14px; }
+.problem-head .title { display: flex; flex-direction: column; gap: 6px; }
+.back { font-size: 14px; text-decoration: none; width: fit-content; }
+.seen { font-size: 12px; color: var(--muted); align-self: center; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 12px; padding: 1px 8px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.tag.block-tag { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.practised { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.core { font-size: 17px; font-family: var(--font-display); font-weight: 500; max-width: 60ch; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+@media (max-width: 720px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+ol, ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+li { max-width: 68ch; }
+.followups li::marker { content: "→  "; color: var(--accent); }
+.codebox { position: relative; min-width: 0; }
+.codebox pre { margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font: 13px/1.55 var(--font-mono); }
+.codebox pre code { background: none; padding: 0; font-size: inherit; }
+.copy { position: absolute; top: 8px; right: 8px; font: 500 12px var(--font-body); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+details.code > summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--accent); width: fit-content; }
+details.code[open] > summary { margin-bottom: 10px; }
+.note { font-size: 14px; color: var(--muted); border-left: 3px solid var(--wait); padding-left: 12px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+<aside>
+  <div class="label">Async orchestration</div>
+  <div class="progress" id="progress">0 of 11 practised</div>
+  <nav id="index"></nav>
+</aside>
+
+<main>
+<section class="intro">
+  <a class="back" href="./">← Knowledge base</a>
+  <h1>Async orchestration playbook</h1>
+  <p class="lede">Eleven classic problems in coordinating asynchronous work in JavaScript: combining promises, limiting concurrency, queues, priorities, scheduling and dependency graphs. Each has the core idea, a tested solution, the edge cases that break naive versions, and where to take it next.</p>
+  <p>Almost every problem here is built from the same three moves. Once you can spot which ones a problem needs, the code mostly writes itself.</p>
+</section>
+
+<section class="blocks" aria-label="Building blocks">
+  <div class="block">
+    <div class="name">Counter + indexed slots</div>
+    <p class="uses">Write each result into <code>results[i]</code>, decrement a counter, finish at zero. Keeps output order independent of finish order.</p>
+    <p class="uses">Used in: Promise.all, allSettled, any, mapLimit, dependency graph</p>
+  </div>
+  <div class="block">
+    <div class="name">Running count + pump</div>
+    <p class="uses">Track how many tasks are in flight. When one finishes, decrement and pull the next from a queue. This is how every concurrency limit works.</p>
+    <p class="uses">Used in: mapLimit, callback queue (Meta), async.queue (Uber), scheduler</p>
+  </div>
+  <div class="block">
+    <div class="name">Per-item state + head scan</div>
+    <p class="uses">Store pending / fulfilled / rejected per item, then walk from the front each time anything settles. Lets you answer "who wins by order" rather than "who finished first".</p>
+    <p class="uses">Used in: priority resolve, dependency graph, combinators with ordering rules</p>
+  </div>
+</section>
+
+<section class="lab" id="lab" aria-labelledby="lab-title">
+  <div class="lab-head">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h2 id="lab-title">Timeline lab</h2>
+      <p style="color:var(--muted);font-size:14px">Same six tasks, different orchestration. Drag durations, flip a task to fail, and watch when each strategy settles.</p>
+    </div>
+    <div class="controls">
+      <label for="limit">Limit <input id="limit" type="number" min="1" max="6" value="2"></label>
+      <button class="btn primary" id="run" type="button">Run</button>
+    </div>
+  </div>
+  <div class="modes" id="modes" role="group" aria-label="Strategy"></div>
+  <p class="mode-note" id="mode-note"></p>
+  <div class="chart"><div class="lanes" id="lanes"></div></div>
+  <div class="result" id="result" aria-live="polite"></div>
+</section>
+
+
+<article class="problem" id="combinators" data-short="Promise combinators">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Promise.all, allSettled, race, any, finally</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Thoughtspot</span><span class="tag">MakeMyTrip</span><span class="tag">Arctic Wolf</span><span class="tag">Abhibus</span><span class="tag">Tekion SSE + Staff</span><span class="tag block-tag">Counter + indexed slots</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-combinators"> Practised</label>
+  </div>
+  <p class="core">Each combinator is the same loop over the inputs. They only differ in what ends the loop early and what they collect.</p>
+  
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Convert the input with <code>Array.from</code> so any iterable works, and wrap every item in <code>Promise.resolve</code> so plain values work too.</li><li><code>all</code>: write into <code>results[i]</code>, count down, resolve at zero; pass <code>reject</code> straight through so the first failure wins.</li><li><code>allSettled</code>: map every item to a promise that never rejects, then reuse <code>all</code>.</li><li><code>race</code>: attach the outer <code>resolve</code> and <code>reject</code> to every item. Whoever calls first wins; later calls are ignored by the promise itself.</li><li><code>any</code>: the mirror of <code>all</code>. Resolve on the first success, count failures, and reject with an <code>AggregateError</code> when they all fail.</li><li><code>finally</code>: run the callback on both paths, wait for whatever it returns, then pass the original value or error through untouched.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Empty input: <code>all</code> resolves with <code>[]</code>, <code>any</code> rejects, <code>race</code> stays pending forever.</li><li>Results must be in input order, not finish order. Using <code>push</code> instead of <code>results[i]</code> is the most common bug.</li><li>Non-promise values in the array must still count toward completion.</li><li><code>finally</code> should not change the resolved value, but an error thrown inside it does replace the result.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Why does calling <code>resolve</code> twice do nothing? (A promise settles once.)</li><li>Make <code>Promise.all</code> stop the remaining work on failure (pass an <code>AbortSignal</code> into each task).</li><li>Implement <code>all</code> with a concurrency limit. That is mapLimit, further down.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function promiseAll(items) {
+  return new Promise((resolve, reject) =&gt; {
+    const list = Array.from(items);
+    const results = new Array(list.length);
+    let remaining = list.length;
+    if (remaining === 0) return resolve(results);
+    list.forEach((item, i) =&gt; {
+      Promise.resolve(item).then((value) =&gt; {
+        results[i] = value;
+        if (--remaining === 0) resolve(results);
+      }, reject);
+    });
+  });
+}
+
+function promiseAllSettled(items) {
+  return promiseAll(
+    Array.from(items).map((item) =&gt;
+      Promise.resolve(item).then(
+        (value) =&gt; ({ status: 'fulfilled', value }),
+        (reason) =&gt; ({ status: 'rejected', reason })
+      )
+    )
+  );
+}
+
+function promiseRace(items) {
+  return new Promise((resolve, reject) =&gt; {
+    for (const item of items) Promise.resolve(item).then(resolve, reject);
+  });
+}
+
+function promiseAny(items) {
+  return new Promise((resolve, reject) =&gt; {
+    const list = Array.from(items);
+    const errors = new Array(list.length);
+    let remaining = list.length;
+    if (remaining === 0) return reject(new AggregateError([], 'All promises were rejected'));
+    list.forEach((item, i) =&gt; {
+      Promise.resolve(item).then(resolve, (err) =&gt; {
+        errors[i] = err;
+        if (--remaining === 0) reject(new AggregateError(errors, 'All promises were rejected'));
+      });
+    });
+  });
+}
+
+function promiseFinally(promise, onFinally) {
+  return promise.then(
+    (value) =&gt; Promise.resolve(onFinally()).then(() =&gt; value),
+    (reason) =&gt; Promise.resolve(onFinally()).then(() =&gt; { throw reason; })
+  );
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="series" data-short="Series vs parallel">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Run promises in series, and sum results in parallel vs in sequence</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">PhonePe</span><span class="tag">Intuit</span><span class="tag">SDE2 practice set</span><span class="tag block-tag">Running count + pump</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-series"> Practised</label>
+  </div>
+  <p class="core">Series means each task starts only after the previous one finishes. Parallel means you start them all, then wait.</p>
+  
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Series: a <code>for…of</code> loop with <code>await</code> inside. Each iteration waits, so tasks never overlap.</li><li>Parallel: call every function first to start the work, then <code>await Promise.all</code> on the promises.</li><li>The classic trap is <code>array.forEach(async fn)</code>: it fires everything in parallel and returns before any of it finishes.</li><li>For "sum the results", run either version and reduce the returned array. The timing difference is the point: series takes the sum of durations, parallel takes the max.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Pass functions, not promises. A promise has already started by the time you have it, so it cannot be run "in series".</li><li>Decide what a failure means: stop the chain (shown here) or record it and continue.</li><li>Synchronous functions in the list must work too; <code>await</code> handles plain values.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Write series with <code>reduce</code> instead of a loop (<code>p.then(() =&gt; fn())</code> chaining).</li><li>Callback-style version without promises: a recursive <code>next(i)</code> that calls itself from the callback.</li><li>What if you need the first N results as soon as they are ready? (Collect in a pool, emit in order.)</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>async function runInSeries(fns) {
+  const results = [];
+  for (const fn of fns) results.push(await fn());
+  return results;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="retry" data-short="Retry with backoff">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Retry a promise N times</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Google</span><span class="tag">Impact Analytics</span><span class="tag block-tag">Running count + pump</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-retry"> Practised</label>
+  </div>
+  <p class="core">Wrap the attempt in a function you can call again, and decide after each failure whether to try again and how long to wait.</p>
+  
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Take a function, not a promise, because each retry needs a fresh call.</li><li>On failure, check the attempt count and an optional <code>shouldRetry(err)</code>. If either says stop, reject with the last error.</li><li>Otherwise schedule the next attempt with <code>setTimeout</code>, multiplying the delay by a factor for exponential backoff.</li><li>Wrapping the call in <code>Promise.resolve().then(fn)</code> turns a synchronous throw into a rejection, so it is retried too.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li><code>retries: 3</code> means 4 attempts in total. Pick one meaning and document it; off-by-one here is common.</li><li>Reject with the last error, not a generic message, so the caller can debug.</li><li>Do not retry errors that will never succeed, like a 400 or 401. That is what <code>shouldRetry</code> is for.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Add jitter (a random amount on each delay) so many clients do not retry at the same instant.</li><li>Make it cancellable with an <code>AbortSignal</code>.</li><li>Combine with a timeout per attempt (next section).</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function retry(fn, { retries = 3, delay = 100, factor = 2, shouldRetry = () =&gt; true } = {}) {
+  return new Promise((resolve, reject) =&gt; {
+    const attempt = (n, wait) =&gt; {
+      Promise.resolve()
+        .then(fn)
+        .then(resolve, (err) =&gt; {
+          if (n &gt;= retries || !shouldRetry(err)) return reject(err);
+          setTimeout(() =&gt; attempt(n + 1, wait * factor), wait);
+        });
+    };
+    attempt(0, delay);
+  });
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="timeout" data-short="Timeout">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Fetch with a timeout</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Course JS track</span><span class="tag block-tag">Counter + indexed slots</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-timeout"> Practised</label>
+  </div>
+  <p class="core">Race the real work against a timer, and actually cancel the work when the timer wins.</p>
+  
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Create an <code>AbortController</code> and hand its <code>signal</code> to the task (for <code>fetch</code>, pass it in the options).</li><li>Start a timer that aborts the controller and rejects with a clear message.</li><li><code>Promise.race</code> the task against the timer.</li><li>Clear the timer in <code>finally</code> so a fast success does not leave a timer running.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Without the abort, the request keeps running in the background after the timeout fires, wasting bandwidth and possibly applying a stale response.</li><li>Always clear the timer; a leaked timer can keep a Node process alive.</li><li>Make the timeout error distinguishable from a network error so callers can retry only timeouts.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>How would you support an outside cancel signal as well as the timeout? (<code>AbortSignal.any</code>, or forward one controller into the other.)</li><li>Add a timeout to every task in mapLimit.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function withTimeout(fn, ms) {
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((_, reject) =&gt; {
+    timer = setTimeout(() =&gt; {
+      controller.abort();
+      reject(new Error(`Timed out after ${ms}ms`));
+    }, ms);
+  });
+  return Promise.race([fn(controller.signal), timeout]).finally(() =&gt; clearTimeout(timer));
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="maplimit" data-short="mapLimit">
+  <div class="problem-head">
+    <div class="title">
+      <h2>mapLimit: run async work with a concurrency limit</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Uber</span><span class="tag">SDE3 / Staff practice set</span><span class="tag block-tag">Running count + pump</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-maplimit"> Practised</label>
+  </div>
+  <p class="core">Start up to N tasks. Each time one finishes, store its result at its index and start the next. That is a pool, and it never leaves a slot idle.</p>
+  <p class="note">A common solution splits the input into fixed batches and waits for each batch to finish. That works, but one slow task holds up its whole batch. The pool version shown here keeps every slot busy.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Keep <code>next</code> (index of the next input to start), <code>done</code> (how many finished) and a <code>results</code> array.</li><li><code>launch()</code> takes the next index, calls the iteratee, and in the callback stores the result and calls <code>launch()</code> again.</li><li>Kick things off by calling <code>launch()</code> <code>min(limit, n)</code> times.</li><li>Resolve when <code>done === n</code>. On the first error, set a flag, reject, and stop launching.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Empty input must resolve immediately with <code>[]</code>, otherwise the promise hangs.</li><li>Results stay in input order even though they finish out of order.</li><li>Ignore callbacks that arrive after a failure, and guard against an iteratee calling back twice.</li><li>A limit bigger than the input length should just run everything.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Why is the pool better than splitting into batches? Try both in the timeline lab above.</li><li>Return results as an async iterator as they complete.</li><li>Support promise-returning iteratees as well as callbacks.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function mapLimit(inputs, limit, iteratee) {
+  return new Promise((resolve, reject) =&gt; {
+    const results = new Array(inputs.length);
+    let next = 0, done = 0, failed = false;
+    if (inputs.length === 0) return resolve(results);
+    const launch = () =&gt; {
+      if (failed || next &gt;= inputs.length) return;
+      const i = next++;
+      iteratee(inputs[i], (err, value) =&gt; {
+        if (failed) return;
+        if (err) { failed = true; return reject(err); }
+        results[i] = value;
+        if (++done === inputs.length) return resolve(results);
+        launch();
+      });
+    };
+    for (let k = 0; k &lt; Math.min(limit, inputs.length); k++) launch();
+  });
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="callbacks-engine" data-short="Callback queue (Meta)">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Engine that processes async callbacks</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Meta</span><span class="tag">Fancode</span><span class="tag block-tag">Running count + pump</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-callbacks-engine"> Practised</label>
+  </div>
+  <p class="core">At most two callbacks run at once. Extra ones wait in a queue of up to six, and the queue is drained FIFO by default or LIFO if the constructor says so.</p>
+  
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>State: the order flag, a <code>queue</code> array, and a <code>running</code> count.</li><li><code>process(cb)</code>: if fewer than two are running, run it now; otherwise push it onto the queue, unless the queue already holds six.</li><li>When a callback finishes, decrement <code>running</code> and take the next one: <code>shift()</code> for FIFO, <code>pop()</code> for LIFO.</li><li>Use <code>finally</code> so a callback that throws still frees its slot.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>A rejected callback must not block the queue forever.</li><li>Some versions of this problem add a contradictory rule about switching to FIFO beyond three queued items. When a spec conflicts with itself, settle the intended behaviour before coding rather than guessing.</li><li>Overflow callbacks are dropped silently. Mention that in a real system you would report them.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Make the concurrency limit and queue size configurable.</li><li>Add a way to know when everything is finished (that is the Uber version next).</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>class QueueCallbacks {
+  constructor(order = '') {
+    this.lifo = order === 'LIFO';
+    this.queue = [];
+    this.running = 0;
+    this.limit = 2;
+    this.maxQueue = 6;
+  }
+  process(cb) {
+    if (this.running &lt; this.limit) return this.#run(cb);
+    if (this.queue.length &gt;= this.maxQueue) return; // discard overflow
+    this.queue.push(cb);
+  }
+  #run(cb) {
+    this.running++;
+    Promise.resolve()
+      .then(cb)
+      .catch(() =&gt; {})
+      .finally(() =&gt; {
+        this.running--;
+        if (this.queue.length) this.#run(this.lifo ? this.queue.pop() : this.queue.shift());
+      });
+  }
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="async-queue" data-short="async.queue (Uber)">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Async callback queue with push, unshift, drain and error</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Uber (twice)</span><span class="tag">Tekion SSE</span><span class="tag">Flipkart</span><span class="tag">SDE3 / Staff practice set</span><span class="tag block-tag">Running count + pump</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-async-queue"> Practised</label>
+  </div>
+  <p class="core">The same pump as mapLimit, but the queue stays open: tasks can be added at either end at any time, and listeners fire on errors and when the queue empties.</p>
+  
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Keep a <code>tasks</code> array, a <code>running</code> count and the two listener callbacks.</li><li><code>push</code> adds to the back, <code>unshift</code> to the front; both accept a single task or an array, then schedule a pump.</li><li><code>pump()</code> starts tasks while <code>running &lt; concurrency</code> and tasks remain.</li><li>In each task callback: decrement, report errors, call <code>onComplete</code>, then either fire <code>drain</code> (nothing running, nothing queued) or pump again.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Pumping in a microtask means a <code>push</code> followed by an <code>unshift</code> in the same tick respects the unshift.</li><li>Guard against a processor calling its callback twice, which would corrupt the running count.</li><li><code>drain</code> should fire once per time the queue empties, not once per task.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Add <code>pause()</code> and <code>resume()</code>.</li><li>Promisify it so <code>await q.push(task)</code> resolves with that task's result.</li><li>Add priorities (use a heap instead of an array).</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function Queue(processorFn, onCompleteFn, concurrency = 1) {
+  const tasks = [];
+  let running = 0;
+  let drainCb = () =&gt; {};
+  let errorCb = () =&gt; {};
+  const toArray = (t) =&gt; (Array.isArray(t) ? t : [t]);
+
+  const pump = () =&gt; {
+    while (running &lt; concurrency &amp;&amp; tasks.length) {
+      const task = tasks.shift();
+      running++;
+      let called = false;
+      processorFn(task, (data, error) =&gt; {
+        if (called) return; // guard against double callbacks
+        called = true;
+        running--;
+        if (error) errorCb(error, task);
+        onCompleteFn(data, error, task);
+        if (running === 0 &amp;&amp; tasks.length === 0) drainCb();
+        else pump();
+      });
+    }
+  };
+
+  return {
+    push(t) { tasks.push(...toArray(t)); queueMicrotask(pump); },
+    unshift(t) { tasks.unshift(...toArray(t)); queueMicrotask(pump); },
+    drain(cb) { drainCb = cb; },
+    error(cb) { errorCb = cb; },
+  };
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="priority" data-short="Priority resolve">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Resolve with the highest-priority success</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">PhonePe</span><span class="tag">Course JS track</span><span class="tag block-tag">Per-item state + head scan</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-priority"> Practised</label>
+  </div>
+  <p class="core">Run everything in parallel, but only resolve when the highest-priority task that has not failed has succeeded.</p>
+  
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Sort by priority (lower number first) or use array order, then store a state per item: pending, fulfilled or rejected.</li><li>Keep a <code>head</code> pointer to the best candidate still standing.</li><li>Whenever anything settles, skip over rejected items at the head. If the head is fulfilled, resolve with it; if it is still pending, wait.</li><li>If the head runs off the end, every task failed: reject.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>A fast success at low priority must wait while a higher-priority task is still pending. The lab shows this.</li><li>Do not mutate the caller's array when sorting.</li><li>Empty input should reject immediately rather than hang.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>How is this different from <code>Promise.any</code>? (Order of priority versus order of finishing.)</li><li>Sequential variant: try tasks one at a time and stop at the first success. Cheaper on resources, slower in wall time.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function priorityResolve(promises) {
+  return new Promise((resolve, reject) =&gt; {
+    const n = promises.length;
+    const state = new Array(n).fill('pending');
+    const values = new Array(n);
+    let head = 0;
+    if (n === 0) return reject(new Error('All promises failed'));
+    const check = () =&gt; {
+      while (head &lt; n &amp;&amp; state[head] === 'rejected') head++;
+      if (head === n) return reject(new Error('All promises failed'));
+      if (state[head] === 'fulfilled') resolve(values[head]);
+    };
+    promises.forEach((p, i) =&gt; {
+      Promise.resolve(p).then(
+        (v) =&gt; { state[i] = 'fulfilled'; values[i] = v; check(); },
+        () =&gt; { state[i] = 'rejected'; check(); }
+      );
+    });
+  });
+}
+// explicit priorities (lower number = higher priority)
+function resolveWithPriority(items) {
+  const sorted = [...items].sort((a, b) =&gt; a.priority - b.priority);
+  return priorityResolve(sorted.map((x) =&gt; x.promise));
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="scheduler" data-short="Pausable scheduler">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Promise scheduler that can be paused and resumed</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Hive</span><span class="tag block-tag">Running count + pump</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-scheduler"> Practised</label>
+  </div>
+  <p class="core">Run functions one at a time from an index. Pausing sets a flag the loop checks between functions; you cannot stop a function that is already running, only wait for it.</p>
+  
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>State: the function list, the next index, a status and the promise currently running.</li><li><code>run()</code> loops from the stored index, awaiting each function and advancing the index, and checks the status before each step.</li><li><code>pause()</code> sets status to pausing and awaits the current function, so it resolves only once the run has actually stopped.</li><li><code>getState()</code> reports the status, the index in progress and the indices not yet run. Resuming is just calling <code>run()</code> again.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Calling <code>run()</code> twice must not start two loops. Guard on the status.</li><li>A function that throws should be reported but should not kill the loop.</li><li>Sync functions in the list must work too. Wrapping with <code>Promise.resolve().then(fn)</code> covers both.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Support cancelling the in-flight function (pass an <code>AbortSignal</code> to each function).</li><li>Allow N to run at a time while still being pausable. Combine this with the pump pattern.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>class PausableScheduler {
+  constructor(fns, { onCompleted = () =&gt; {}, onPaused = () =&gt; {}, onError = () =&gt; {} } = {}) {
+    this.fns = fns;
+    this.index = 0;
+    this.status = 'idle';
+    this.current = null;
+    this.hooks = { onCompleted, onPaused, onError };
+  }
+  async run() {
+    if (this.status === 'running') return;
+    this.status = 'running';
+    while (this.index &lt; this.fns.length) {
+      if (this.status === 'pausing') { this.status = 'paused'; this.hooks.onPaused(this.getState()); return; }
+      const i = this.index;
+      this.current = Promise.resolve().then(() =&gt; this.fns[i]());
+      try { await this.current; } catch (e) { this.hooks.onError(e, i); }
+      this.index++;
+    }
+    this.status = 'completed';
+    this.hooks.onCompleted();
+  }
+  async pause() {
+    if (this.status !== 'running') return;
+    this.status = 'pausing';
+    await this.current?.catch(() =&gt; {}); // the in-flight function cannot be interrupted, only waited on
+  }
+  getState() {
+    return {
+      status: this.status,
+      inProgress: this.status === 'running' ? this.index : null,
+      unexecuted: this.fns.map((_, i) =&gt; i).slice(this.index + (this.status === 'running' ? 1 : 0)),
+    };
+  }
+  runAllUnexecutedFunctions() { return this.run(); }
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="deps" data-short="Dependency graph">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Run async tasks with dependencies, like a build graph</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Uber</span><span class="tag block-tag">Per-item state + head scan</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-deps"> Practised</label>
+  </div>
+  <p class="core">Each task waits for its dependencies, then runs. Memoise the promise per task so a shared dependency runs exactly once, and independent tasks run in parallel automatically.</p>
+  
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Validate first: walk the graph depth-first to catch cycles and references to tasks that do not exist.</li><li><code>start(name)</code> returns a cached promise if one exists; otherwise it awaits <code>Promise.all</code> of its dependencies' <code>start()</code>, then runs the task.</li><li>Call <code>start</code> for every task and wait with <code>allSettled</code> so one failure does not hide the others.</li><li>Return the results and errors per task, plus a success flag.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>A failed dependency means its dependents never run, and they should not appear in results.</li><li>Without the cache, a task that two others depend on runs twice.</li><li>A cycle would deadlock silently, so detect it before running anything.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Add a concurrency limit across the whole graph (feed ready tasks into a pool).</li><li>Return a topological order, or a level-by-level plan, without running anything.</li><li>Let a dependent run with partial results when an optional dependency fails.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>async function runTasks(tasks, deps = {}) {
+  const names = Object.keys(tasks);
+  // cycle and unknown-dependency check
+  const visiting = new Set(), visited = new Set();
+  const visit = (n, path) =&gt; {
+    if (!(n in tasks)) throw new Error(`Unknown task "${n}"`);
+    if (visiting.has(n)) throw new Error(`Cycle: ${[...path, n].join(' -&gt; ')}`);
+    if (visited.has(n)) return;
+    visiting.add(n);
+    (deps[n] || []).forEach((d) =&gt; visit(d, [...path, n]));
+    visiting.delete(n); visited.add(n);
+  };
+  names.forEach((n) =&gt; visit(n, []));
+
+  const memo = new Map();
+  const results = {}, errors = {};
+  const start = (name) =&gt; {
+    if (!memo.has(name)) {
+      memo.set(name, (async () =&gt; {
+        await Promise.all((deps[name] || []).map(start));
+        try { return (results[name] = await tasks[name]()); }
+        catch (e) { errors[name] = e; throw e; }
+      })());
+    }
+    return memo.get(name);
+  };
+  await Promise.allSettled(names.map(start));
+  return { success: Object.keys(errors).length === 0, results, errors };
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="memoize-async" data-short="Async memoize">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Memoise callback-based async functions</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Rippling</span><span class="tag">Uber L5a (SDE3)</span><span class="tag block-tag">Counter + indexed slots</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-memoize-async"> Practised</label>
+  </div>
+  <p class="core">Cache finished results, and also remember calls that are still in flight so identical concurrent calls share one request instead of starting their own.</p>
+  
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>The last argument is the callback; build the cache key from the rest (configurable for objects).</li><li>Cache hit that has not expired: answer asynchronously with <code>queueMicrotask</code>, and move the key to the end for LRU order.</li><li>Already in flight: add the callback to that key's waiting list and return.</li><li>Otherwise call the real function. When it finishes, cache successes with an expiry, evict the oldest key past <code>maxSize</code>, and call every waiting callback.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Never cache errors, or one network blip poisons the key until it expires.</li><li>Always call back asynchronously, even on a cache hit. Mixing sync and async callbacks causes ordering bugs (often called "releasing Zalgo").</li><li>A <code>Map</code> keeps insertion order, which makes LRU eviction a delete-and-reinsert.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Add abort support, and a "latest wins" mode that cancels older calls for the same key.</li><li>Return stale data while revalidating in the background (stale-while-revalidate).</li><li>How does React Query or SWR solve the same problem?</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function memoizeCallback(fn, { ttl = Infinity, maxSize = 100, key = (...a) =&gt; JSON.stringify(a) } = {}) {
+  const cache = new Map(); // key -&gt; { value, expires }
+  const inflight = new Map(); // key -&gt; [callbacks]
+  return function (...args) {
+    const cb = args.pop();
+    const k = key(...args);
+    const hit = cache.get(k);
+    if (hit &amp;&amp; hit.expires &gt; Date.now()) {
+      cache.delete(k); cache.set(k, hit); // refresh LRU position
+      return queueMicrotask(() =&gt; cb(null, hit.value));
+    }
+    if (inflight.has(k)) return inflight.get(k).push(cb);
+    inflight.set(k, [cb]);
+    fn.call(this, ...args, (err, value) =&gt; {
+      const waiters = inflight.get(k);
+      inflight.delete(k);
+      if (!err) {
+        cache.set(k, { value, expires: Date.now() + ttl });
+        if (cache.size &gt; maxSize) cache.delete(cache.keys().next().value);
+      }
+      waiters.forEach((w) =&gt; w(err, value));
+    });
+  };
+}</code></pre></div>
+  </details>
+</article>
+</main>
+</div>
+
+<script>
+// ---------- problem index + practised state ----------
+const problems = [...document.querySelectorAll('.problem')];
+const index = document.getElementById('index');
+const KEY = 'async-playbook-practised';
+let practised = {};
+try { practised = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(practised)); } catch (e) {} }
+function refreshProgress() {
+  const n = problems.filter(p => practised[p.id]).length;
+  document.getElementById('progress').textContent = n + ' of ' + problems.length + ' practised';
+  problems.forEach(p => document.querySelector('a[href="#' + p.id + '"]').classList.toggle('done', !!practised[p.id]));
+}
+problems.forEach(p => {
+  const a = document.createElement('a');
+  a.href = '#' + p.id;
+  a.innerHTML = '<span class="dot"></span><span></span>';
+  a.lastChild.textContent = p.dataset.short;
+  index.appendChild(a);
+  const box = p.querySelector('.practised input');
+  box.checked = !!practised[p.id];
+  box.addEventListener('change', () => { practised[p.id] = box.checked; save(); refreshProgress(); });
+});
+refreshProgress();
+
+// ---------- copy buttons ----------
+document.querySelectorAll('.codebox').forEach(box => {
+  const btn = box.querySelector('.copy');
+  btn.addEventListener('click', () => {
+    const text = box.querySelector('code').innerText;
+    const done = () => { btn.textContent = 'Copied'; setTimeout(() => (btn.textContent = 'Copy'), 1400); };
+    try {
+      navigator.clipboard.writeText(text).then(done, () => selectCode(box));
+    } catch (e) { selectCode(box); }
+  });
+});
+function selectCode(box) {
+  const r = document.createRange(); r.selectNodeContents(box.querySelector('code'));
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  box.querySelector('.copy').textContent = 'Press Ctrl+C';
+}
+
+// ---------- timeline lab ----------
+const tasks = [
+  { name: 'A', dur: 300, ok: true }, { name: 'B', dur: 700, ok: true }, { name: 'C', dur: 200, ok: false },
+  { name: 'D', dur: 400, ok: true }, { name: 'E', dur: 250, ok: true }, { name: 'F', dur: 500, ok: true },
+];
+const modes = {
+  series: { label: 'Series', note: 'One at a time, in order (for…of + await). A failure stops the chain, so later tasks never start.' },
+  all: { label: 'Promise.all', note: 'Everything starts at once. Rejects as soon as any task fails; the others keep running but their results are ignored.' },
+  allSettled: { label: 'allSettled', note: 'Everything starts at once and it always waits for the slowest task. Never rejects.' },
+  race: { label: 'race', note: 'Settles with whichever task settles first, success or failure.' },
+  any: { label: 'any', note: 'Settles with the first success. Only rejects (AggregateError) if every task fails.' },
+  priority: { label: 'Priority', note: 'All start at once, but the answer is the first success in array order. A fast low-priority win has to wait until every higher-priority task has failed.' },
+  batch: { label: 'Batches of N', note: 'Common but weaker mapLimit: run N, wait for the whole batch, then the next N. One slow task idles the other slots.' },
+  pool: { label: 'Pool of N', note: 'The mapLimit to aim for: N slots, and a new task starts the moment any slot frees up. Same limit, less idle time.' },
+};
+let mode = 'pool';
+const modesEl = document.getElementById('modes');
+Object.entries(modes).forEach(([k, m]) => {
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = m.label; b.dataset.mode = k;
+  b.addEventListener('click', () => { mode = k; render(true); });
+  modesEl.appendChild(b);
+});
+
+function schedule() {
+  const limit = Math.max(1, Math.min(6, parseInt(document.getElementById('limit').value, 10) || 1));
+  const rows = tasks.map(t => ({ ...t, start: null, end: null, ignored: false }));
+  let outcome;
+  const firstFailEnd = list => list.filter(r => !r.ok && r.end != null).reduce((m, r) => (m == null || r.end < m.end ? r : m), null);
+  if (mode === 'series') {
+    let t = 0;
+    for (const r of rows) { r.start = t; r.end = t + r.dur; t = r.end; if (!r.ok) { outcome = { t, ok: false, text: 'rejected by ' + r.name }; break; } }
+    outcome = outcome || { t, ok: true, text: 'resolved with all 6 results' };
+  } else if (['all', 'allSettled', 'race', 'any', 'priority'].includes(mode)) {
+    rows.forEach(r => { r.start = 0; r.end = r.dur; });
+    const max = Math.max(...rows.map(r => r.end));
+    if (mode === 'all') {
+      const f = firstFailEnd(rows);
+      outcome = f ? { t: f.end, ok: false, text: 'rejected by ' + f.name } : { t: max, ok: true, text: 'resolved with all 6 results' };
+    } else if (mode === 'allSettled') {
+      outcome = { t: max, ok: true, text: 'resolved with 6 status objects' };
+    } else if (mode === 'race') {
+      const first = rows.reduce((m, r) => (r.end < m.end ? r : m));
+      outcome = { t: first.end, ok: first.ok, text: (first.ok ? 'resolved with ' : 'rejected by ') + first.name };
+    } else if (mode === 'any') {
+      const wins = rows.filter(r => r.ok);
+      if (!wins.length) outcome = { t: max, ok: false, text: 'rejected with AggregateError' };
+      else { const w = wins.reduce((m, r) => (r.end < m.end ? r : m)); outcome = { t: w.end, ok: true, text: 'resolved with ' + w.name }; }
+    } else {
+      let t = 0; outcome = null;
+      for (const r of rows) { t = Math.max(t, r.end); if (r.ok) { outcome = { t, ok: true, text: 'resolved with ' + r.name + ' (highest priority success)' }; break; } }
+      outcome = outcome || { t, ok: false, text: 'rejected: all promises failed' };
+    }
+    if (outcome) rows.forEach(r => { if (r.end > outcome.t && mode !== 'allSettled') r.ignored = true; });
+  } else {
+    // batch or pool, with mapLimit's stop-on-first-error rule
+    let failAt = null;
+    if (mode === 'batch') {
+      let t = 0;
+      for (let i = 0; i < rows.length; i += limit) {
+        if (failAt != null && t >= failAt) break;
+        const chunk = rows.slice(i, i + limit);
+        chunk.forEach(r => { r.start = t; r.end = t + r.dur; if (!r.ok) failAt = failAt == null ? r.end : Math.min(failAt, r.end); });
+        t = Math.max(...chunk.map(r => r.end));
+      }
+    } else {
+      const slots = new Array(limit).fill(0);
+      for (const r of rows) {
+        const s = slots.indexOf(Math.min(...slots));
+        if (failAt != null && slots[s] >= failAt) break;
+        r.start = slots[s]; r.end = r.start + r.dur; r.slot = s + 1; slots[s] = r.end;
+        if (!r.ok) failAt = failAt == null ? r.end : Math.min(failAt, r.end);
+      }
+    }
+    const ran = rows.filter(r => r.start != null);
+    if (failAt != null) {
+      const f = ran.find(r => !r.ok && r.end === failAt);
+      outcome = { t: failAt, ok: false, text: 'rejected by ' + f.name };
+      rows.forEach(r => { if (r.end != null && r.end > failAt) r.ignored = true; });
+    } else outcome = { t: Math.max(...ran.map(r => r.end)), ok: true, text: 'resolved with all 6 results' };
+  }
+  return { rows, outcome };
+}
+
+const lanesEl = document.getElementById('lanes');
+let anim = null;
+function render(animate) {
+  [...modesEl.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+  document.getElementById('mode-note').textContent = modes[mode].note;
+  document.getElementById('limit').disabled = !(mode === 'batch' || mode === 'pool');
+  const { rows, outcome } = schedule();
+  const span = Math.max(1000, Math.ceil(Math.max(...rows.map(r => r.end || 0), outcome.t) / 250) * 250);
+  lanesEl.innerHTML = '';
+  rows.forEach((r, i) => {
+    const label = document.createElement('div'); label.className = 'lane-label';
+    label.innerHTML = '<span class="tname"></span><input type="range" min="100" max="900" step="50" aria-label="Duration of task"><span class="dur"></span><button type="button" class="outcome-toggle"></button>';
+    label.querySelector('.tname').textContent = r.name;
+    const range = label.querySelector('input'); range.id = 'dur-' + r.name; range.value = tasks[i].dur;
+    label.querySelector('.dur').textContent = tasks[i].dur + 'ms';
+    range.addEventListener('input', () => { tasks[i].dur = +range.value; render(false); });
+    const tog = label.querySelector('.outcome-toggle');
+    tog.textContent = tasks[i].ok ? 'ok' : 'fail'; tog.classList.toggle('fail', !tasks[i].ok);
+    tog.setAttribute('aria-label', 'Task ' + r.name + ' outcome: ' + (tasks[i].ok ? 'succeeds' : 'fails') + '. Toggle');
+    tog.addEventListener('click', () => { tasks[i].ok = !tasks[i].ok; render(false); });
+    const track = document.createElement('div'); track.className = 'track';
+    if (r.start == null) { const s = document.createElement('div'); s.className = 'skipped'; s.textContent = 'never started'; track.appendChild(s); }
+    else {
+      const bar = document.createElement('div');
+      bar.className = 'bar ' + (r.ok ? 'ok' : 'fail') + (r.ignored ? ' ignored' : '');
+      bar.style.left = (r.start / span * 100) + '%'; bar.style.width = (r.dur / span * 100) + '%';
+      bar.textContent = r.slot ? 'slot ' + r.slot : '';
+      bar.dataset.start = r.start; bar.dataset.end = r.end;
+      track.appendChild(bar);
+    }
+    lanesEl.append(label, track);
+  });
+  const axis = document.createElement('div'); axis.className = 'axis';
+  for (let k = 0; k <= 4; k++) { const s = document.createElement('span'); s.textContent = Math.round(span * k / 4) + 'ms'; axis.appendChild(s); }
+  lanesEl.appendChild(document.createElement('div')); lanesEl.appendChild(axis);
+  // overlay markers positioned against the track column
+  const first = lanesEl.querySelector('.track');
+  const left = first.offsetLeft, width = first.offsetWidth;
+  const marker = document.createElement('div'); marker.className = 'marker';
+  marker.style.left = (left + outcome.t / span * width) + 'px';
+  lanesEl.appendChild(marker);
+  const res = document.getElementById('result');
+  res.innerHTML = '<span class="pill"></span><span class="t"></span><span class="txt"></span>';
+  res.querySelector('.pill').textContent = outcome.ok ? 'fulfilled' : 'rejected';
+  res.querySelector('.pill').classList.add(outcome.ok ? 'ok' : 'fail');
+  res.querySelector('.t').textContent = 'at ' + outcome.t + 'ms';
+  res.querySelector('.txt').textContent = outcome.text + '. Faded bars kept running after the result was decided.';
+  if (!rows.some(r => r.ignored)) res.querySelector('.txt').textContent = outcome.text + '.';
+  if (animate) play(span, left, width, outcome.t);
+}
+
+function play(span, left, width, settleT) {
+  if (anim) cancelAnimationFrame(anim);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const bars = [...lanesEl.querySelectorAll('.bar')];
+  const marker = lanesEl.querySelector('.marker'); marker.style.opacity = 0;
+  const head = document.createElement('div'); head.className = 'playhead'; lanesEl.appendChild(head);
+  const total = span * 1.6; let t0 = null;
+  const frame = ts => {
+    if (t0 == null) t0 = ts;
+    const t = Math.min(span, (ts - t0) / total * span);
+    head.style.left = (left + t / span * width) + 'px';
+    bars.forEach(b => { const s = +b.dataset.start, e = +b.dataset.end; b.style.transform = 'scaleX(' + Math.max(0, Math.min(1, (t - s) / (e - s))) + ')'; });
+    if (t >= settleT) marker.style.opacity = 1;
+    if (t < span) anim = requestAnimationFrame(frame); else { head.remove(); anim = null; }
+  };
+  bars.forEach(b => (b.style.transform = 'scaleX(0)'));
+  anim = requestAnimationFrame(frame);
+}
+
+document.getElementById('run').addEventListener('click', () => render(true));
+document.getElementById('limit').addEventListener('input', () => render(false));
+addEventListener('resize', () => render(false));
+render(false);
+</script>

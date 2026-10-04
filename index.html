@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Knowledge Base · apoorv-j</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* Layout: one narrow column; domains as sections, guides as rows with a short description and date. */
+:root {
+  --bg: #f2f4f8; --surface: #ffffff; --ink: #18212e; --muted: #5a6575; --line: #d7dde6; --accent: #2f4fd6; --accent-soft: #e4e9fc;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #0e131a; --surface: #151c26; --ink: #e5eaf1; --muted: #97a2b2; --line: #263040; --accent: #8fa6ff; --accent-soft: #1f2a48; color-scheme: dark } }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--font-body); }
+.wrap { max-width: 760px; margin: 0 auto; padding-inline: 20px; padding-block: 56px 80px; display: flex; flex-direction: column; gap: 44px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.eyebrow { font: 13px var(--font-mono); color: var(--muted); }
+h1 { font-family: var(--font-display); font-size: clamp(32px, 6vw, 46px); line-height: 1.1; margin: 0; letter-spacing: -0.01em; }
+header p { margin: 0; color: var(--muted); max-width: 60ch; font-size: 16px; }
+section { display: flex; flex-direction: column; gap: 12px; }
+h2 { font: 600 12px var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.guides { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.guides a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 12px 14px; margin-inline: -14px; border-radius: 8px; text-decoration: none; color: inherit; }
+.guides a:hover, .guides a:focus-visible { background: var(--accent-soft); outline: none; }
+.guides .name { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--accent); }
+.guides .date { font: 12px var(--font-mono); color: var(--muted); align-self: center; font-variant-numeric: tabular-nums; }
+.guides .desc { grid-column: 1 / -1; color: var(--muted); max-width: 65ch; }
+.topic { font: 12px var(--font-mono); color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">apoorv-j / knowledge-base</div>
+    <h1>Knowledge Base</h1>
+    <p>Interactive notes and guides on things I'm learning, mostly frontend engineering and the web platform.</p>
+  </header>
+
+  <section aria-labelledby="js">
+    <h2 id="js">JavaScript</h2>
+    <ul class="guides">
+      <li><a href="async-orchestration.html">
+        <span class="name">Async orchestration</span>
+        <span class="date">Oct 2026</span>
+        <span class="desc">Promise combinators, concurrency pools, queues, priorities, pausable schedulers and dependency graphs, with a timeline lab and tested solutions.</span>
+      </a></li>
+    </ul>
+  </section>
+</div>
+</body>
+</html>
