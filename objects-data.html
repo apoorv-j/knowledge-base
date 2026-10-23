@@ -1,0 +1,1105 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Objects &amp; Data Shapes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky problem index on the left, long-form study column on the right; a timeline lab sits up top as the one interactive centrepiece. */
+:root {
+  --bg: #f2f4f8; --surface: #ffffff; --ink: #18212e; --muted: #5a6575; --line: #d7dde6;
+  --accent: #2f4fd6; --accent-soft: #e4e9fc; --ok: #1d8556; --fail: #c2410c; --wait: #a86f12; --code-bg: #eef1f6; --skip: #c3cad4;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e131a; --surface: #151c26; --ink: #e5eaf1; --muted: #97a2b2; --line: #263040;
+  --accent: #8fa6ff; --accent-soft: #1f2a48; --ok: #4cc38a; --fail: #f0875c; --wait: #e2b24c; --code-bg: #111821; --skip: #3a4556; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #151c26; --ink: #e5eaf1; --muted: #97a2b2; --line: #263040;
+  --accent: #8fa6ff; --accent-soft: #1f2a48; --ok: #4cc38a; --fail: #f0875c; --wait: #e2b24c; --code-bg: #111821; --skip: #3a4556; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--font-body); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 80px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-inline: 16px; } }
+
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 26px; font-weight: 700; }
+h3 { font-size: 15px; font-family: var(--font-body); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+p { margin: 0; max-width: 68ch; }
+code { font-family: var(--font-mono); font-size: .9em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* index */
+aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; display: flex; flex-direction: column; gap: 14px; }
+aside .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+aside nav { display: flex; flex-direction: column; gap: 2px; }
+aside nav a { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; padding: 5px 8px; border-radius: 6px; font-size: 14px; }
+aside nav a:hover { background: var(--accent-soft); }
+aside nav a .dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--muted); flex: none; }
+aside nav a.done .dot { background: var(--ok); border-color: var(--ok); }
+.progress { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) {
+  aside { position: static; }
+  aside nav { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  aside nav a { white-space: nowrap; border: 1px solid var(--line); background: var(--surface); }
+}
+
+main { display: flex; flex-direction: column; gap: 56px; min-width: 0; }
+.intro { display: flex; flex-direction: column; gap: 14px; }
+.intro .lede { font-size: 17px; color: var(--muted); }
+
+/* building blocks */
+.blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.block { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.block .name { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+.block .uses { font-size: 13px; color: var(--muted); }
+.block pre { margin: 0; }
+
+/* lab */
+.lab { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.lab-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: end; }
+.modes { display: flex; flex-wrap: wrap; gap: 6px; }
+.modes button, .btn { font: 500 13px var(--font-body); border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 6px 11px; border-radius: 999px; cursor: pointer; }
+.modes button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn.primary { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 13px; color: var(--muted); }
+.controls label { display: flex; gap: 6px; align-items: center; }
+.controls input[type=number] { width: 54px; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; }
+.mode-note { font-size: 14px; color: var(--muted); min-height: 2.6em; }
+.chart { overflow-x: auto; }
+.lanes { min-width: 520px; display: grid; grid-template-columns: 150px 1fr; row-gap: 8px; column-gap: 12px; position: relative; }
+.lane-label { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.lane-label input[type=range] { width: 70px; }
+.lane-label .tname { font-family: var(--font-mono); font-weight: 500; width: 14px; }
+.lane-label .dur { font-family: var(--font-mono); font-size: 12px; color: var(--muted); width: 44px; font-variant-numeric: tabular-nums; }
+.outcome-toggle { font: 500 11px var(--font-mono); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; cursor: pointer; background: var(--bg); color: var(--ok); }
+.outcome-toggle.fail { color: var(--fail); }
+.track { position: relative; height: 26px; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), var(--line) calc(10% - 1px) 10%); border-radius: 4px; }
+.bar { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; font: 500 11px var(--font-mono); color: var(--surface); display: flex; align-items: center; padding-left: 6px; overflow: hidden; white-space: nowrap; transform-origin: left; }
+.bar.ok { background: var(--ok); } .bar.fail { background: var(--fail); } .bar.ignored { opacity: .35; }
+.skipped { position: absolute; inset: 3px 0; font: 11px var(--font-mono); color: var(--muted); display: flex; align-items: center; padding-left: 6px; }
+.axis { grid-column: 2; display: flex; justify-content: space-between; font: 11px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.marker { position: absolute; top: 0; bottom: 18px; width: 2px; background: var(--accent); pointer-events: none; }
+.playhead { position: absolute; top: 0; bottom: 18px; width: 1px; background: var(--ink); opacity: .5; pointer-events: none; }
+.result { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; font-size: 15px; }
+.pill { font: 600 12px var(--font-body); padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor; }
+.pill.ok { color: var(--ok); } .pill.fail { color: var(--fail); }
+.result .t { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* problems */
+.problem { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 20px; }
+.problem-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: start; border-top: 2px solid var(--ink); padding-top: 14px; }
+.problem-head .title { display: flex; flex-direction: column; gap: 6px; }
+.back { font-size: 14px; text-decoration: none; width: fit-content; }
+.seen { font-size: 12px; color: var(--muted); align-self: center; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 12px; padding: 1px 8px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.tag.block-tag { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.practised { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.core { font-size: 17px; font-family: var(--font-display); font-weight: 500; max-width: 60ch; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+@media (max-width: 720px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+ol, ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+li { max-width: 68ch; }
+.followups li::marker { content: "→  "; color: var(--accent); }
+.codebox { position: relative; min-width: 0; }
+.codebox pre { margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font: 13px/1.55 var(--font-mono); }
+.codebox pre code { background: none; padding: 0; font-size: inherit; }
+.copy { position: absolute; top: 8px; right: 8px; font: 500 12px var(--font-body); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+details.code > summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--accent); width: fit-content; }
+details.code[open] > summary { margin-bottom: 10px; }
+.note { font-size: 14px; color: var(--muted); border-left: 3px solid var(--wait); padding-left: 12px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* object lab */
+.ops { display: flex; flex-wrap: wrap; gap: 6px; }
+.ops button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.io { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 760px) { .io { grid-template-columns: minmax(0, 1fr); } }
+.io .pane { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.io label, .args label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.io textarea, .io pre.out { font: 12.5px/1.5 var(--font-mono); background: var(--code-bg); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 0; min-height: 280px; max-height: 420px; overflow: auto; width: 100%; resize: vertical; white-space: pre; }
+.io textarea[aria-invalid="true"] { border-color: var(--fail); }
+.args { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; }
+.args > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.args input, .args select { font: 13px var(--font-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; min-width: 0; max-width: 100%; }
+.args input.wide { width: min(320px, 100%); }
+.status-line { font-size: 13px; color: var(--muted); min-height: 1.4em; }
+.status-line.error { color: var(--fail); }
+.share { color: var(--ok); } .copied { color: var(--wait); }
+pre.out .k-shared { color: var(--ok); } pre.out .k-copied { color: var(--wait); font-weight: 600; }
+</style>
+
+<div class="wrap">
+<aside>
+  <div class="label">Objects &amp; data shapes</div>
+  <div class="progress" id="progress"></div>
+  <nav id="index"></nav>
+</aside>
+
+<main>
+<section class="intro">
+  <a class="back" href="./">← Knowledge base</a>
+  <h1>Objects &amp; data shapes</h1>
+  <p class="lede">Eleven utilities for reading, reshaping and comparing nested data: get and set by path, flatten, deep equal, deep clone, nested filtering, list to tree, grouping, deep merge, immutable updates and rendering JSON as HTML. Each has the core idea, a tested solution, the edge cases that break naive versions, and where to take it next.</p>
+  <p>Almost all of them are the same recursive walk with a different decision at each node. Three ideas carry most of the weight.</p>
+</section>
+
+<section class="blocks" aria-label="Building blocks">
+  <div class="block">
+    <div class="name">Walk by shape</div>
+    <p class="uses">At every node, decide: primitive, array, plain object, or something special like a Date, Map or class instance. Recurse into the containers, act on the rest. Most bugs come from treating a Date or null as a plain object.</p>
+    <p class="uses">Used in: flatten, deep equal, deep clone, filter, merge, JSON to HTML</p>
+  </div>
+  <div class="block">
+    <div class="name">Paths as key lists</div>
+    <p class="uses">Turn <code>'a.b[0].c'</code> into <code>['a', 'b', 0, 'c']</code> once, then walk the list. Numbers mean arrays. Block <code>__proto__</code> whenever input can write keys.</p>
+    <p class="uses">Used in: get, set, setIn, unflatten, immutable update</p>
+  </div>
+  <div class="block">
+    <div class="name">Remember what you've seen</div>
+    <p class="uses">A <code>WeakMap</code> or <code>Set</code> of visited objects stops infinite loops on cycles and keeps shared references shared. Copy only the path you change and reuse the rest.</p>
+    <p class="uses">Used in: deep equal, deep clone, remove cycles, list to tree, setIn, update</p>
+  </div>
+</section>
+
+<section class="lab" id="lab" aria-labelledby="lab-title">
+  <div style="display:flex;flex-direction:column;gap:4px">
+    <h2 id="lab-title">Object lab</h2>
+    <p style="color:var(--muted);font-size:14px">Edit the JSON, pick an operation, and see the result. This runs the same functions shown in the solutions below.</p>
+  </div>
+  <div class="ops" id="ops" role="group" aria-label="Operation"></div>
+  <div class="args" id="args"></div>
+  <div class="io">
+    <div class="pane"><label for="input">Input JSON</label><textarea id="input" spellcheck="false"></textarea></div>
+    <div class="pane"><label for="output" id="out-label">Result</label><pre class="out" id="output" tabindex="0" aria-live="polite"></pre></div>
+  </div>
+  <p class="status-line" id="status"></p>
+</section>
+
+
+<article class="problem" id="get" data-short="get by path">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Get a value by path</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Amazon</span><span class="tag">SDE2 practice set</span><span class="tag">SDE2 problem set 4</span><span class="tag block-tag">Paths as key lists</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-get"> Practised</label>
+  </div>
+  <p class="core">Parse the path into a list of keys once, then step down one key at a time, stopping safely when something along the way is missing.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Accept a string like <code>a.b[0].c</code> or an array of keys. Bracket parts become numbers or quoted keys, so <code>a["b.c"]</code> reaches a key that contains a dot.</li><li>Walk the keys. If the current value is <code>null</code> or <code>undefined</code>, return the default.</li><li>At the end, return the default only when the value is <code>undefined</code>, not when it is falsy.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>A price of <code>0</code> or an empty string is a real value; <code>|| defaultValue</code> would hide it.</li><li>Splitting on dots alone breaks keys that contain dots, and indexes written as <code>[0]</code>.</li><li>A <code>null</code> in the middle of the path must not throw.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Support negative indexes like <code>items[-1]</code> for the last item.</li><li>Return every match for wildcard paths like <code>seats[*].price</code>.</li><li>How does optional chaining (<code>a?.b?.[0]</code>) compare when the path is known at write time?</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>// 'a.b[0].c', 'a[b.c]', ['a', 'b', 0] are all accepted.
+function toPath(path) {
+  if (Array.isArray(path)) return path;
+  const keys = [];
+  String(path).replace(/[^.[\]]+|\[(?:(-?\d+)|(["'])(.*?)\2)\]/g, (match, index, quote, quoted) =&gt; {
+    keys.push(index !== undefined ? Number(index) : quote ? quoted : match);
+    return '';
+  });
+  return keys;
+}
+
+function get(obj, path, defaultValue) {
+  let cur = obj;
+  for (const key of toPath(path)) {
+    if (cur == null) return defaultValue;
+    cur = cur[key];
+  }
+  return cur === undefined ? defaultValue : cur;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="set" data-short="set by path">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Set a value by path, mutable and immutable</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Course JS track</span><span class="tag block-tag">Paths as key lists</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-set"> Practised</label>
+  </div>
+  <p class="core">Walk the path creating any missing container on the way. The immutable version copies only the objects along the path and shares everything else.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Reuse the same path parser as <code>get</code>.</li><li>For each key except the last, create a container if one is missing: an array if the next key is a number, otherwise an object.</li><li>Assign the value at the last key.</li><li>Immutable version: recurse down the path and rebuild each level with a shallow copy, putting the new child in place. Untouched siblings keep their old references, which is what lets React skip re-rendering them.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Reject <code>__proto__</code>, <code>constructor</code> and <code>prototype</code> in paths. Otherwise <code>set({}, "__proto__.isAdmin", true)</code> changes every object in the app.</li><li>Setting index 3 of an empty array leaves holes at 0 to 2. That matches lodash, but say so.</li><li>If something along the path is a string or number, decide whether to replace it with a container or throw.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Use the object lab: run setIn and see which branches are copied and which are shared.</li><li>Write <code>unset(obj, path)</code> and an immutable <code>updateIn(obj, path, fn)</code>.</li><li>How do Immer and Redux Toolkit let you write mutating code and still get this sharing?</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>// Mutating version creates missing containers: an array when the next key is a number.
+const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
+
+function set(obj, path, value) {
+  const keys = toPath(path);
+  if (keys.some((k) =&gt; UNSAFE.has(k))) throw new Error('Unsafe key in path');
+  let cur = obj;
+  keys.forEach((key, i) =&gt; {
+    if (i === keys.length - 1) { cur[key] = value; return; }
+    if (cur[key] === null || typeof cur[key] !== 'object') cur[key] = typeof keys[i + 1] === 'number' ? [] : {};
+    cur = cur[key];
+  });
+  return obj;
+}
+
+// Immutable version: copies only the containers along the path; everything else is shared.
+function setIn(obj, path, value) {
+  const keys = toPath(path);
+  if (keys.some((k) =&gt; UNSAFE.has(k))) throw new Error('Unsafe key in path');
+  const go = (node, i) =&gt; {
+    if (i === keys.length) return value;
+    const key = keys[i];
+    const base = node !== null &amp;&amp; typeof node === 'object' ? node : typeof key === 'number' ? [] : {};
+    const copy = Array.isArray(base) ? base.slice() : { ...base };
+    copy[key] = go(base[key], i + 1);
+    return copy;
+  };
+  return go(obj, 0);
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="flatten" data-short="Flatten &amp; unflatten">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Flatten a nested object to dot keys, and back</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Adobe</span><span class="tag">Impact Analytics</span><span class="tag">SDE2 practice set</span><span class="tag block-tag">Walk by shape</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-flatten"> Practised</label>
+  </div>
+  <p class="core">Walk the object carrying the path so far. At each leaf, write the joined path as a key. Unflatten is just <code>set</code> for each key.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Recurse into plain objects, and into arrays when indexes should become path segments.</li><li>Treat everything else as a leaf: primitives, <code>null</code>, Dates, class instances.</li><li>Keep empty objects and arrays as leaves, otherwise they vanish and the round trip loses data.</li><li>Unflatten: split each key on the separator, turn digit-only segments into numbers, and call <code>set</code>.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>A Date flattened as an object turns into nothing, because it has no own enumerable keys.</li><li>Keys that already contain the separator make the result ambiguous. Choose a separator the data can't contain, or escape it.</li><li>Digit-only object keys like <code>{"2026": …}</code> come back as array indexes. Mention it as a known limitation.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Accept a custom separator and an option to stop at a maximum depth.</li><li>Where is this used in practice? Form libraries, analytics event properties, and translation files.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>const isPlainObject = (v) =&gt; v !== null &amp;&amp; typeof v === 'object' &amp;&amp; Object.getPrototypeOf(v) === Object.prototype;
+
+function flatten(obj, { separator = '.', arrays = 'index' } = {}) {
+  const out = {};
+  const walk = (value, prefix) =&gt; {
+    const isArr = Array.isArray(value);
+    const descend = isPlainObject(value) || (isArr &amp;&amp; arrays === 'index');
+    const entries = descend ? Object.entries(value) : [];
+    if (!descend || entries.length === 0) {
+      if (prefix) out[prefix] = value; // keep {} and [] as leaves so nothing is lost
+      return;
+    }
+    for (const [k, v] of entries) walk(v, prefix ? prefix + separator + k : k);
+  };
+  walk(obj, '');
+  return out;
+}
+
+function unflatten(flat, { separator = '.' } = {}) {
+  const out = {};
+  for (const [key, value] of Object.entries(flat)) {
+    set(out, key.split(separator).map((k) =&gt; (/^\d+$/.test(k) ? Number(k) : k)), value);
+  }
+  return out;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="deep-equal" data-short="Deep equal">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Deep equal</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Impact Analytics</span><span class="tag">Tekion (Staff)</span><span class="tag block-tag">Remember what you've seen</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-deep-equal"> Practised</label>
+  </div>
+  <p class="core">Two values are equal if they are the same primitive, or the same kind of container with equal contents. The edge cases are what make it hard.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Start with <code>Object.is</code>, which treats <code>NaN</code> as equal to itself and <code>0</code> and <code>-0</code> as different.</li><li>Different prototypes mean different kinds of thing: an array is never equal to an object with numeric keys.</li><li>Handle Date, RegExp, Map and Set explicitly, then compare own keys, including symbols, for everything else.</li><li>Track pairs already being compared in a Map, so cyclic structures terminate.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li><code>{a: 1}</code> and <code>{a: 1, b: undefined}</code> have different keys. Count keys, don't just look up values.</li><li><code>JSON.stringify</code> comparison fails on key order, <code>undefined</code>, Dates, Maps and cycles.</li><li>Sets of objects need a deep match per element, which is quadratic. This version compares Set members by reference and says so.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Return the path of the first difference, not just true or false.</li><li>Make a shallow-equal version and explain where React uses it (<code>memo</code>, dependency arrays).</li><li>Why do <code>useEffect</code> dependency arrays use <code>Object.is</code> rather than deep equality?</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function deepEqual(a, b, seen = new Map()) {
+  if (Object.is(a, b)) return true; // handles NaN, and -0 vs 0 as different
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) return false;
+
+  // cycles: if we are already comparing this pair, assume equal for now
+  if (seen.get(a) === b) return true;
+  seen.set(a, b);
+
+  if (a instanceof Date) return a.getTime() === b.getTime();
+  if (a instanceof RegExp) return String(a) === String(b);
+  if (a instanceof Map) {
+    if (a.size !== b.size) return false;
+    for (const [k, v] of a) if (!b.has(k) || !deepEqual(v, b.get(k), seen)) return false;
+    return true;
+  }
+  if (a instanceof Set) {
+    if (a.size !== b.size) return false;
+    for (const v of a) if (!b.has(v)) return false; // primitives and same references
+    return true;
+  }
+  const ka = Reflect.ownKeys(a), kb = Reflect.ownKeys(b);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) {
+    if (!Object.prototype.hasOwnProperty.call(b, k) || !deepEqual(a[k], b[k], seen)) return false;
+  }
+  return true;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="deep-clone" data-short="Deep clone &amp; cycles">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Deep clone with cycles, and removing cycles</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Fancode</span><span class="tag">SDE2 problem set 8 (remove cycles)</span><span class="tag block-tag">Remember what you've seen</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-deep-clone"> Practised</label>
+  </div>
+  <p class="core">Copy recursively, but record each original object and its copy in a WeakMap first. A second visit returns the existing copy, which keeps cycles and shared references intact.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Return primitives as they are.</li><li>If the object is already in the WeakMap, return its copy.</li><li>Create the right empty container (array, Map, Set, or an object with the same prototype), store it in the WeakMap, then fill it.</li><li>To remove cycles instead, walk with a set of current ancestors and delete any property pointing back to one of them.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Register the copy before recursing, or a self-reference recurses forever.</li><li>Removing every repeated reference is wrong: two siblings pointing to the same object is not a cycle. Track ancestors on the current path only.</li><li><code>JSON.parse(JSON.stringify(x))</code> drops <code>undefined</code>, functions and Dates, and throws on cycles.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>When would you use the built-in <code>structuredClone</code>, and what can it not copy? (Functions, DOM nodes, class prototypes.)</li><li>Make a cycle-safe <code>JSON.stringify</code> that writes <code>"[Circular]"</code>.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function deepClone(value, seen = new WeakMap()) {
+  if (value === null || typeof value !== 'object') return value;
+  if (seen.has(value)) return seen.get(value); // keep shared and circular references intact
+  if (value instanceof Date) return new Date(value);
+  if (value instanceof RegExp) return new RegExp(value.source, value.flags);
+  if (value instanceof Map) {
+    const m = new Map(); seen.set(value, m);
+    value.forEach((v, k) =&gt; m.set(deepClone(k, seen), deepClone(v, seen)));
+    return m;
+  }
+  if (value instanceof Set) {
+    const s = new Set(); seen.set(value, s);
+    value.forEach((v) =&gt; s.add(deepClone(v, seen)));
+    return s;
+  }
+  const copy = Array.isArray(value) ? [] : Object.create(Object.getPrototypeOf(value));
+  seen.set(value, copy);
+  for (const key of Reflect.ownKeys(value)) copy[key] = deepClone(value[key], seen);
+  return copy;
+}
+
+// Remove properties that point back to an ancestor (true cycles); shared siblings are kept.
+function removeCycles(obj) {
+  const ancestors = new WeakSet();
+  const walk = (node) =&gt; {
+    ancestors.add(node);
+    for (const key of Object.keys(node)) {
+      const v = node[key];
+      if (v === null || typeof v !== 'object') continue;
+      if (ancestors.has(v)) delete node[key];
+      else walk(v);
+    }
+    ancestors.delete(node);
+  };
+  if (obj !== null &amp;&amp; typeof obj === 'object') walk(obj);
+  return obj;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="filter-nested" data-short="Filter nested">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Filter a nested object</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Amazon</span><span class="tag">SDE2 practice set</span><span class="tag block-tag">Walk by shape</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-filter-nested"> Practised</label>
+  </div>
+  <p class="core">Recurse into containers and keep leaves that pass the test. A branch that ends up empty is removed, so the result contains only paths that lead to matches.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>For each entry, recurse if it is a plain object or array; otherwise run the test on the leaf.</li><li>Pass the key and the full path to the test, so callers can filter on location as well as value.</li><li>Return <code>undefined</code> for a branch with nothing kept, and skip it in the parent.</li><li>For arrays, push kept items so the result has no holes.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Decide whether an empty object in the input counts as a match; here it is dropped.</li><li>Compacting arrays changes indexes. If indexes matter, keep holes or return paths instead.</li><li>Never mutate the input; build a new structure.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Return the matching paths instead of a filtered copy (the basis of a JSON search box).</li><li>Filter by key rather than value: remove every key named <code>password</code> before logging.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>// Keep leaves that pass the test; drop branches that end up empty.
+function filterDeep(obj, test, path = []) {
+  const out = Array.isArray(obj) ? [] : {};
+  let kept = 0;
+  for (const [key, value] of Object.entries(obj)) {
+    const here = [...path, key];
+    if (isPlainObject(value) || Array.isArray(value)) {
+      const child = filterDeep(value, test, here);
+      if (child !== undefined) { Array.isArray(out) ? out.push(child) : (out[key] = child); kept++; }
+    } else if (test(value, key, here)) {
+      Array.isArray(out) ? out.push(value) : (out[key] = value);
+      kept++;
+    }
+  }
+  return kept ? out : undefined;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="list-to-tree" data-short="List to tree">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Turn a flat list with parent IDs into a tree</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Amazon (entity relations)</span><span class="tag block-tag">Remember what you've seen</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-list-to-tree"> Practised</label>
+  </div>
+  <p class="core">Index every item by ID in a Map first, then attach each item to its parent in one pass. That is O(n), with no searching inside loops.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Build a Map from ID to a copy of the item with an empty <code>children</code> array.</li><li>For each node, look up its parent. Attach it there, or treat it as a root if there is no parent or the parent is missing.</li><li>Check that every node is reachable from a root. Any that aren't are part of a cycle.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Items can arrive in any order: a child before its parent must still work, which the two-pass approach handles.</li><li>A filter inside a loop to find children is O(n²) and slow for thousands of categories.</li><li>Copy the items rather than adding <code>children</code> to the caller's objects.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Go the other way: tree back to a flat list with depth, for rendering an indented list.</li><li>Render it as a nested checkbox tree or file explorer (common machine-coding follow-ups).</li><li>Find the path from the root to any node, for breadcrumbs.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>function listToTree(items, { id = 'id', parentId = 'parentId' } = {}) {
+  const nodes = new Map(items.map((item) =&gt; [item[id], { ...item, children: [] }]));
+  const roots = [];
+  for (const node of nodes.values()) {
+    const parent = node[parentId] == null ? null : nodes.get(node[parentId]);
+    if (parent) parent.children.push(node);
+    else roots.push(node); // no parent, or the parent is missing: treat as a root
+  }
+  // a cycle (A -&gt; B -&gt; A) would leave nodes unreachable from any root
+  const reached = new Set();
+  const mark = (n) =&gt; { if (reached.has(n)) return; reached.add(n); n.children.forEach(mark); };
+  roots.forEach(mark);
+  if (reached.size !== nodes.size) throw new Error('Cycle in parent links');
+  return roots;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="group-aggregate" data-short="Group &amp; aggregate">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Group an array of objects and aggregate values</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Livespace</span><span class="tag">Amazon (aggregate input values)</span><span class="tag block-tag">Walk by shape</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-group-aggregate"> Practised</label>
+  </div>
+  <p class="core">Build a composite key from the grouping fields, keep running totals per key in a Map, then turn each group into one output row.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Make the group key with <code>JSON.stringify</code> of the key values, so values containing your separator can't collide.</li><li>Keep count, sum, min and max per metric while scanning once.</li><li>Derive averages at the end from sum and count, never by averaging averages.</li><li>A Map keeps groups in first-seen order, which makes the output stable.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Joining keys with <code>|</code> makes <code>"a|b" + "c"</code> and <code>"a" + "b|c"</code> the same group.</li><li>Non-numeric or missing values: decide whether they count as zero or are skipped, and be consistent.</li><li>Using a plain object as the group store is risky with a key like <code>__proto__</code>; a Map is not.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Add a pivot: cities as rows, categories as columns.</li><li>Stream it: update totals as rows arrive instead of from a full array.</li><li>Compare with <code>Object.groupBy</code> and <code>Map.groupBy</code>, now built into JavaScript.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>// groupAggregate(rows, ['city', 'category'], { tickets: 'sum', price: 'avg' })
+function groupAggregate(rows, keys, metrics) {
+  const groups = new Map();
+  for (const row of rows) {
+    const k = JSON.stringify(keys.map((key) =&gt; row[key])); // safe composite key
+    let g = groups.get(k);
+    if (!g) {
+      g = { key: Object.fromEntries(keys.map((key) =&gt; [key, row[key]])), count: 0, sums: {}, mins: {}, maxs: {} };
+      groups.set(k, g);
+    }
+    g.count++;
+    for (const m of Object.keys(metrics)) {
+      const v = Number(row[m]) || 0;
+      g.sums[m] = (g.sums[m] || 0) + v;
+      g.mins[m] = Math.min(g.mins[m] ?? Infinity, v);
+      g.maxs[m] = Math.max(g.maxs[m] ?? -Infinity, v);
+    }
+  }
+  return [...groups.values()].map((g) =&gt; {
+    const out = { ...g.key, count: g.count };
+    for (const [m, how] of Object.entries(metrics)) {
+      out[m] = how === 'sum' ? g.sums[m] : how === 'avg' ? g.sums[m] / g.count : how === 'min' ? g.mins[m] : g.maxs[m];
+    }
+    return out;
+  });
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="deep-merge" data-short="Deep merge">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Deep merge two or more objects</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Course JS track</span><span class="tag block-tag">Walk by shape</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-deep-merge"> Practised</label>
+  </div>
+  <p class="core">Copy keys from each source in order. When both sides hold plain objects, merge them recursively; otherwise the later value wins.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Loop over the sources left to right.</li><li>If the source value is a plain object, merge it into the target's value (or into a new object if the target's value isn't one).</li><li>Replace arrays and everything else, and skip <code>undefined</code> so a missing value doesn't erase a default.</li><li>Skip <code>__proto__</code> and friends when the source comes from user input or JSON.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Merging config parsed from JSON without the key check is a classic prototype pollution bug.</li><li>Arrays: replace, concatenate, or merge by index? Each is valid; pick one and document it.</li><li>Class instances and Dates should be copied as values, not merged key by key.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Make it non-mutating by starting from a fresh object.</li><li>Add a custom merge function per key, as in lodash <code>mergeWith</code>.</li><li>Where does this show up in frontend work? Theme overrides, feature-flag defaults, form initial values.</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>// Later sources win; plain objects merge recursively; arrays and other values replace.
+function deepMerge(target, ...sources) {
+  for (const src of sources) {
+    if (!isPlainObject(src)) continue;
+    for (const key of Object.keys(src)) {
+      if (UNSAFE.has(key)) continue; // never let input write to prototypes
+      const s = src[key], t = target[key];
+      if (isPlainObject(s)) target[key] = deepMerge(isPlainObject(t) ? t : {}, s);
+      else if (s !== undefined) target[key] = Array.isArray(s) ? s.slice() : s;
+    }
+  }
+  return target;
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="immutable-update" data-short="Immutable update">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Immutability helper with $set, $push, $merge and friends</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Course JS track</span><span class="tag block-tag">Remember what you've seen</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-immutable-update"> Practised</label>
+  </div>
+  <p class="core">The update spec mirrors the shape of the state. Walk both together, apply a command where one appears, and copy only the containers on the way to a change.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>If the spec at this level is a command (<code>$set</code>, <code>$apply</code>, <code>$push</code>, <code>$unshift</code>, <code>$splice</code>, <code>$merge</code>, <code>$unset</code>), return the new value it produces.</li><li>Otherwise, for each key in the spec, recurse into the state at that key.</li><li>If no child changed, return the original state object itself, so equality checks can skip work.</li><li>Shallow-copy arrays and objects only when a child really changed.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Returning a new object even when nothing changed forces needless re-renders in React.</li><li>A spec key that is not in the state should create it, as <code>{ deep: { new: { $set: 1 } } }</code> does.</li><li>Reject unsafe keys, because specs can come from untrusted input.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Add <code>$toggle</code> for booleans and <code>$remove</code> for array items matching a test.</li><li>Compare with Immer: what does writing mutating code inside <code>produce</code> buy you?</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>// update(state, { cart: { items: { $push: [x] } }, user: { $merge: { name } } })
+function update(state, spec) {
+  if (spec === null || typeof spec !== 'object') throw new Error('Spec must be an object');
+  if ('$set' in spec) return spec.$set;
+  if ('$apply' in spec) return spec.$apply(state);
+  if ('$push' in spec) return [...state, ...spec.$push];
+  if ('$unshift' in spec) return [...spec.$unshift, ...state];
+  if ('$splice' in spec) {
+    const copy = state.slice();
+    spec.$splice.forEach((args) =&gt; copy.splice(...args));
+    return copy;
+  }
+  if ('$merge' in spec) return { ...state, ...spec.$merge };
+  if ('$unset' in spec) {
+    const copy = { ...state };
+    spec.$unset.forEach((k) =&gt; delete copy[k]);
+    return copy;
+  }
+  let changed = false;
+  const copy = Array.isArray(state) ? state.slice() : { ...state };
+  for (const key of Object.keys(spec)) {
+    if (UNSAFE.has(key)) throw new Error('Unsafe key in spec');
+    const next = update(state == null ? undefined : state[key], spec[key]);
+    if (!Object.is(next, copy[key])) { copy[key] = next; changed = true; }
+  }
+  return changed ? copy : state; // nothing changed: keep the same reference
+}</code></pre></div>
+  </details>
+</article>
+
+<article class="problem" id="json-to-html" data-short="JSON to HTML">
+  <div class="problem-head">
+    <div class="title">
+      <h2>Render JSON as HTML (and as DOM nodes)</h2>
+      <div class="meta"><span class="seen">Seen in interviews at</span><span class="tag">Meta</span><span class="tag block-tag">Walk by shape</span></div>
+    </div>
+    <label class="practised"><input type="checkbox" id="done-json-to-html"> Practised</label>
+  </div>
+  <p class="core">Each node is a tag, props and children, like the objects <code>React.createElement</code> returns. Render the tree recursively, escaping text and attributes and refusing anything that could run script.</p>
+  <div class="cols">
+    <div class="col"><h3>Approach</h3><ol><li>Strings and numbers become escaped text; arrays render each item; <code>null</code> and <code>false</code> render nothing.</li><li>Validate the tag name and attribute names against simple patterns before using them.</li><li>Map <code>className</code> to <code>class</code> and <code>htmlFor</code> to <code>for</code>, write <code>true</code> as a bare attribute, and skip <code>false</code> and <code>null</code>.</li><li>Close void elements like <code>img</code> and <code>input</code> without children.</li><li>The DOM version creates nodes with <code>createElement</code> and <code>setAttribute</code>, which escapes text for you.</li></ol></div>
+    <div class="col"><h3>Edge cases</h3><ul><li>Unescaped text turns <code>&lt;img onerror=…&gt;</code> in an event title into script.</li><li>Drop <code>on*</code> props and <code>javascript:</code> URLs, as in the object lab example.</li><li>An attribute name built from input can break out of the tag; validate names, not just values.</li><li><code>0</code> is valid content and should render, unlike <code>false</code>.</li></ul>
+      <h3 style="margin-top:12px">Go further</h3><ul class="followups"><li>Render to DOM, then diff two trees and patch only what changed (a tiny virtual DOM).</li><li>Accept components: if <code>type</code> is a function, call it with props and render the result.</li><li>How does this relate to the JSON-driven UI and server-driven UI questions?</li></ul></div>
+  </div>
+  <details class="code"><summary>Show solution (try it yourself first)</summary>
+    <div class="codebox"><button class="copy" type="button">Copy</button><pre><code>// { type: 'div', props: { className: 'card' }, children: ['Hi', { type: 'b', children: 'there' }] }
+const VOID = new Set(['br', 'hr', 'img', 'input', 'meta', 'link']);
+const escapeHtml = (s) =&gt; String(s).replace(/[&amp;&lt;&gt;"']/g, (c) =&gt; ({ '&amp;': '&amp;amp;', '&lt;': '&amp;lt;', '&gt;': '&amp;gt;', '"': '&amp;quot;', "'": '&amp;#39;' })[c]);
+
+function toHtml(node) {
+  if (node == null || node === false) return '';
+  if (typeof node === 'string' || typeof node === 'number') return escapeHtml(node);
+  if (Array.isArray(node)) return node.map(toHtml).join('');
+  const { type, props = {}, children } = node;
+  if (!/^[a-z][a-z0-9-]*$/.test(type)) throw new Error('Invalid tag: ' + type);
+  const attrs = Object.entries(props)
+    .filter(([name, v]) =&gt; v != null &amp;&amp; v !== false &amp;&amp; !/^on/i.test(name)) // no inline event handlers
+    .map(([name, v]) =&gt; {
+      const attr = name === 'className' ? 'class' : name === 'htmlFor' ? 'for' : name;
+      if (!/^[a-zA-Z][\w-]*$/.test(attr)) throw new Error('Invalid attribute: ' + name);
+      if ((attr === 'href' || attr === 'src') &amp;&amp; /^\s*javascript:/i.test(v)) return '';
+      return v === true ? ` ${attr}` : ` ${attr}="${escapeHtml(v)}"`;
+    })
+    .join('');
+  if (VOID.has(type)) return `&lt;${type}${attrs}&gt;`;
+  return `&lt;${type}${attrs}&gt;${toHtml(children)}&lt;/${type}&gt;`;
+}
+
+// The DOM version, like React.createElement but for real nodes
+function toDom(node, doc = document) {
+  if (node == null || node === false) return doc.createTextNode('');
+  if (typeof node === 'string' || typeof node === 'number') return doc.createTextNode(String(node));
+  if (Array.isArray(node)) {
+    const frag = doc.createDocumentFragment();
+    node.forEach((n) =&gt; frag.appendChild(toDom(n, doc)));
+    return frag;
+  }
+  const el = doc.createElement(node.type);
+  for (const [name, v] of Object.entries(node.props || {})) {
+    if (v == null || v === false || /^on/i.test(name)) continue;
+    el.setAttribute(name === 'className' ? 'class' : name === 'htmlFor' ? 'for' : name, v === true ? '' : String(v));
+  }
+  if (node.children != null) el.appendChild(toDom(node.children, doc));
+  return el;
+}</code></pre></div>
+  </details>
+</article>
+</main>
+</div>
+
+<script>
+// ---------- index, progress, copy ----------
+const problems = [...document.querySelectorAll('.problem')];
+const index = document.getElementById('index');
+const KEY = 'objects-data-practised';
+let practised = {};
+try { practised = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(practised)); } catch (e) {} }
+function refreshProgress() {
+  const n = problems.filter(p => practised[p.id]).length;
+  document.getElementById('progress').textContent = n + ' of ' + problems.length + ' practised';
+  problems.forEach(p => document.querySelector('a[href="#' + p.id + '"]').classList.toggle('done', !!practised[p.id]));
+}
+problems.forEach(p => {
+  const a = document.createElement('a');
+  a.href = '#' + p.id;
+  a.innerHTML = '<span class="dot"></span><span></span>';
+  a.lastChild.textContent = p.dataset.short;
+  index.appendChild(a);
+  const box = p.querySelector('.practised input');
+  box.checked = !!practised[p.id];
+  box.addEventListener('change', () => { practised[p.id] = box.checked; save(); refreshProgress(); });
+});
+refreshProgress();
+document.querySelectorAll('.codebox').forEach(box => {
+  const btn = box.querySelector('.copy');
+  btn.addEventListener('click', () => {
+    const text = box.querySelector('code').innerText;
+    const done = () => { btn.textContent = 'Copied'; setTimeout(() => (btn.textContent = 'Copy'), 1400); };
+    const select = () => { const r = document.createRange(); r.selectNodeContents(box.querySelector('code')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Press Ctrl+C'; };
+    try { navigator.clipboard.writeText(text).then(done, select); } catch (e) { select(); }
+  });
+});
+
+// ---------- the guide's own functions ----------
+const lib = (() => {
+// ===== 1. Get a value by path =====
+// 'a.b[0].c', 'a[b.c]', ['a', 'b', 0] are all accepted.
+function toPath(path) {
+  if (Array.isArray(path)) return path;
+  const keys = [];
+  String(path).replace(/[^.[\]]+|\[(?:(-?\d+)|(["'])(.*?)\2)\]/g, (match, index, quote, quoted) => {
+    keys.push(index !== undefined ? Number(index) : quote ? quoted : match);
+    return '';
+  });
+  return keys;
+}
+
+function get(obj, path, defaultValue) {
+  let cur = obj;
+  for (const key of toPath(path)) {
+    if (cur == null) return defaultValue;
+    cur = cur[key];
+  }
+  return cur === undefined ? defaultValue : cur;
+}
+
+// ===== 2. Set a value by path =====
+// Mutating version creates missing containers: an array when the next key is a number.
+const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
+
+function set(obj, path, value) {
+  const keys = toPath(path);
+  if (keys.some((k) => UNSAFE.has(k))) throw new Error('Unsafe key in path');
+  let cur = obj;
+  keys.forEach((key, i) => {
+    if (i === keys.length - 1) { cur[key] = value; return; }
+    if (cur[key] === null || typeof cur[key] !== 'object') cur[key] = typeof keys[i + 1] === 'number' ? [] : {};
+    cur = cur[key];
+  });
+  return obj;
+}
+
+// Immutable version: copies only the containers along the path; everything else is shared.
+function setIn(obj, path, value) {
+  const keys = toPath(path);
+  if (keys.some((k) => UNSAFE.has(k))) throw new Error('Unsafe key in path');
+  const go = (node, i) => {
+    if (i === keys.length) return value;
+    const key = keys[i];
+    const base = node !== null && typeof node === 'object' ? node : typeof key === 'number' ? [] : {};
+    const copy = Array.isArray(base) ? base.slice() : { ...base };
+    copy[key] = go(base[key], i + 1);
+    return copy;
+  };
+  return go(obj, 0);
+}
+
+// ===== 3. Flatten and unflatten =====
+const isPlainObject = (v) => v !== null && typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype;
+
+function flatten(obj, { separator = '.', arrays = 'index' } = {}) {
+  const out = {};
+  const walk = (value, prefix) => {
+    const isArr = Array.isArray(value);
+    const descend = isPlainObject(value) || (isArr && arrays === 'index');
+    const entries = descend ? Object.entries(value) : [];
+    if (!descend || entries.length === 0) {
+      if (prefix) out[prefix] = value; // keep {} and [] as leaves so nothing is lost
+      return;
+    }
+    for (const [k, v] of entries) walk(v, prefix ? prefix + separator + k : k);
+  };
+  walk(obj, '');
+  return out;
+}
+
+function unflatten(flat, { separator = '.' } = {}) {
+  const out = {};
+  for (const [key, value] of Object.entries(flat)) {
+    set(out, key.split(separator).map((k) => (/^\d+$/.test(k) ? Number(k) : k)), value);
+  }
+  return out;
+}
+
+// ===== 4. Deep equal =====
+function deepEqual(a, b, seen = new Map()) {
+  if (Object.is(a, b)) return true; // handles NaN, and -0 vs 0 as different
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) return false;
+
+  // cycles: if we are already comparing this pair, assume equal for now
+  if (seen.get(a) === b) return true;
+  seen.set(a, b);
+
+  if (a instanceof Date) return a.getTime() === b.getTime();
+  if (a instanceof RegExp) return String(a) === String(b);
+  if (a instanceof Map) {
+    if (a.size !== b.size) return false;
+    for (const [k, v] of a) if (!b.has(k) || !deepEqual(v, b.get(k), seen)) return false;
+    return true;
+  }
+  if (a instanceof Set) {
+    if (a.size !== b.size) return false;
+    for (const v of a) if (!b.has(v)) return false; // primitives and same references
+    return true;
+  }
+  const ka = Reflect.ownKeys(a), kb = Reflect.ownKeys(b);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) {
+    if (!Object.prototype.hasOwnProperty.call(b, k) || !deepEqual(a[k], b[k], seen)) return false;
+  }
+  return true;
+}
+
+// ===== 5. Deep clone with cycles, and removing cycles =====
+function deepClone(value, seen = new WeakMap()) {
+  if (value === null || typeof value !== 'object') return value;
+  if (seen.has(value)) return seen.get(value); // keep shared and circular references intact
+  if (value instanceof Date) return new Date(value);
+  if (value instanceof RegExp) return new RegExp(value.source, value.flags);
+  if (value instanceof Map) {
+    const m = new Map(); seen.set(value, m);
+    value.forEach((v, k) => m.set(deepClone(k, seen), deepClone(v, seen)));
+    return m;
+  }
+  if (value instanceof Set) {
+    const s = new Set(); seen.set(value, s);
+    value.forEach((v) => s.add(deepClone(v, seen)));
+    return s;
+  }
+  const copy = Array.isArray(value) ? [] : Object.create(Object.getPrototypeOf(value));
+  seen.set(value, copy);
+  for (const key of Reflect.ownKeys(value)) copy[key] = deepClone(value[key], seen);
+  return copy;
+}
+
+// Remove properties that point back to an ancestor (true cycles); shared siblings are kept.
+function removeCycles(obj) {
+  const ancestors = new WeakSet();
+  const walk = (node) => {
+    ancestors.add(node);
+    for (const key of Object.keys(node)) {
+      const v = node[key];
+      if (v === null || typeof v !== 'object') continue;
+      if (ancestors.has(v)) delete node[key];
+      else walk(v);
+    }
+    ancestors.delete(node);
+  };
+  if (obj !== null && typeof obj === 'object') walk(obj);
+  return obj;
+}
+
+// ===== 6. Filter a nested object =====
+// Keep leaves that pass the test; drop branches that end up empty.
+function filterDeep(obj, test, path = []) {
+  const out = Array.isArray(obj) ? [] : {};
+  let kept = 0;
+  for (const [key, value] of Object.entries(obj)) {
+    const here = [...path, key];
+    if (isPlainObject(value) || Array.isArray(value)) {
+      const child = filterDeep(value, test, here);
+      if (child !== undefined) { Array.isArray(out) ? out.push(child) : (out[key] = child); kept++; }
+    } else if (test(value, key, here)) {
+      Array.isArray(out) ? out.push(value) : (out[key] = value);
+      kept++;
+    }
+  }
+  return kept ? out : undefined;
+}
+
+// ===== 7. Flat list to tree (entity relations) =====
+function listToTree(items, { id = 'id', parentId = 'parentId' } = {}) {
+  const nodes = new Map(items.map((item) => [item[id], { ...item, children: [] }]));
+  const roots = [];
+  for (const node of nodes.values()) {
+    const parent = node[parentId] == null ? null : nodes.get(node[parentId]);
+    if (parent) parent.children.push(node);
+    else roots.push(node); // no parent, or the parent is missing: treat as a root
+  }
+  // a cycle (A -> B -> A) would leave nodes unreachable from any root
+  const reached = new Set();
+  const mark = (n) => { if (reached.has(n)) return; reached.add(n); n.children.forEach(mark); };
+  roots.forEach(mark);
+  if (reached.size !== nodes.size) throw new Error('Cycle in parent links');
+  return roots;
+}
+
+// ===== 8. Group and aggregate =====
+// groupAggregate(rows, ['city', 'category'], { tickets: 'sum', price: 'avg' })
+function groupAggregate(rows, keys, metrics) {
+  const groups = new Map();
+  for (const row of rows) {
+    const k = JSON.stringify(keys.map((key) => row[key])); // safe composite key
+    let g = groups.get(k);
+    if (!g) {
+      g = { key: Object.fromEntries(keys.map((key) => [key, row[key]])), count: 0, sums: {}, mins: {}, maxs: {} };
+      groups.set(k, g);
+    }
+    g.count++;
+    for (const m of Object.keys(metrics)) {
+      const v = Number(row[m]) || 0;
+      g.sums[m] = (g.sums[m] || 0) + v;
+      g.mins[m] = Math.min(g.mins[m] ?? Infinity, v);
+      g.maxs[m] = Math.max(g.maxs[m] ?? -Infinity, v);
+    }
+  }
+  return [...groups.values()].map((g) => {
+    const out = { ...g.key, count: g.count };
+    for (const [m, how] of Object.entries(metrics)) {
+      out[m] = how === 'sum' ? g.sums[m] : how === 'avg' ? g.sums[m] / g.count : how === 'min' ? g.mins[m] : g.maxs[m];
+    }
+    return out;
+  });
+}
+
+// ===== 9. Deep merge =====
+// Later sources win; plain objects merge recursively; arrays and other values replace.
+function deepMerge(target, ...sources) {
+  for (const src of sources) {
+    if (!isPlainObject(src)) continue;
+    for (const key of Object.keys(src)) {
+      if (UNSAFE.has(key)) continue; // never let input write to prototypes
+      const s = src[key], t = target[key];
+      if (isPlainObject(s)) target[key] = deepMerge(isPlainObject(t) ? t : {}, s);
+      else if (s !== undefined) target[key] = Array.isArray(s) ? s.slice() : s;
+    }
+  }
+  return target;
+}
+
+// ===== 10. Immutability helper =====
+// update(state, { cart: { items: { $push: [x] } }, user: { $merge: { name } } })
+function update(state, spec) {
+  if (spec === null || typeof spec !== 'object') throw new Error('Spec must be an object');
+  if ('$set' in spec) return spec.$set;
+  if ('$apply' in spec) return spec.$apply(state);
+  if ('$push' in spec) return [...state, ...spec.$push];
+  if ('$unshift' in spec) return [...spec.$unshift, ...state];
+  if ('$splice' in spec) {
+    const copy = state.slice();
+    spec.$splice.forEach((args) => copy.splice(...args));
+    return copy;
+  }
+  if ('$merge' in spec) return { ...state, ...spec.$merge };
+  if ('$unset' in spec) {
+    const copy = { ...state };
+    spec.$unset.forEach((k) => delete copy[k]);
+    return copy;
+  }
+  let changed = false;
+  const copy = Array.isArray(state) ? state.slice() : { ...state };
+  for (const key of Object.keys(spec)) {
+    if (UNSAFE.has(key)) throw new Error('Unsafe key in spec');
+    const next = update(state == null ? undefined : state[key], spec[key]);
+    if (!Object.is(next, copy[key])) { copy[key] = next; changed = true; }
+  }
+  return changed ? copy : state; // nothing changed: keep the same reference
+}
+
+// ===== 11. JSON to HTML =====
+// { type: 'div', props: { className: 'card' }, children: ['Hi', { type: 'b', children: 'there' }] }
+const VOID = new Set(['br', 'hr', 'img', 'input', 'meta', 'link']);
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+function toHtml(node) {
+  if (node == null || node === false) return '';
+  if (typeof node === 'string' || typeof node === 'number') return escapeHtml(node);
+  if (Array.isArray(node)) return node.map(toHtml).join('');
+  const { type, props = {}, children } = node;
+  if (!/^[a-z][a-z0-9-]*$/.test(type)) throw new Error('Invalid tag: ' + type);
+  const attrs = Object.entries(props)
+    .filter(([name, v]) => v != null && v !== false && !/^on/i.test(name)) // no inline event handlers
+    .map(([name, v]) => {
+      const attr = name === 'className' ? 'class' : name === 'htmlFor' ? 'for' : name;
+      if (!/^[a-zA-Z][\w-]*$/.test(attr)) throw new Error('Invalid attribute: ' + name);
+      if ((attr === 'href' || attr === 'src') && /^\s*javascript:/i.test(v)) return '';
+      return v === true ? ` ${attr}` : ` ${attr}="${escapeHtml(v)}"`;
+    })
+    .join('');
+  if (VOID.has(type)) return `<${type}${attrs}>`;
+  return `<${type}${attrs}>${toHtml(children)}</${type}>`;
+}
+
+// The DOM version, like React.createElement but for real nodes
+function toDom(node, doc = document) {
+  if (node == null || node === false) return doc.createTextNode('');
+  if (typeof node === 'string' || typeof node === 'number') return doc.createTextNode(String(node));
+  if (Array.isArray(node)) {
+    const frag = doc.createDocumentFragment();
+    node.forEach((n) => frag.appendChild(toDom(n, doc)));
+    return frag;
+  }
+  const el = doc.createElement(node.type);
+  for (const [name, v] of Object.entries(node.props || {})) {
+    if (v == null || v === false || /^on/i.test(name)) continue;
+    el.setAttribute(name === 'className' ? 'class' : name === 'htmlFor' ? 'for' : name, v === true ? '' : String(v));
+  }
+  if (node.children != null) el.appendChild(toDom(node.children, doc));
+  return el;
+}
+
+
+  return { get, setIn, flatten, unflatten, filterDeep, deepEqual, listToTree, groupAggregate, toHtml };
+})();
+
+// ---------- object lab ----------
+const SAMPLE_EVENT = {
+  id: 'E42',
+  title: 'Stand-up night',
+  venue: { name: 'The Gallery', city: 'Bangalore', seats: [{ id: 'A1', price: 499, sold: false }, { id: 'A2', price: 499, sold: true }] },
+  tags: ['comedy', 'english'],
+  organiser: { name: 'Laugh Club', verified: true, contact: {} },
+  startsAt: '2026-11-07T20:00:00+05:30',
+};
+const SAMPLE_LIST = [
+  { id: 1, name: 'Events', parentId: null },
+  { id: 2, name: 'Comedy', parentId: 1 },
+  { id: 3, name: 'Music', parentId: 1 },
+  { id: 4, name: 'Open mic', parentId: 2 },
+  { id: 5, name: 'Indie', parentId: 3 },
+];
+const SAMPLE_SALES = [
+  { city: 'Bangalore', category: 'comedy', tickets: 2, price: 500 },
+  { city: 'Bangalore', category: 'comedy', tickets: 3, price: 700 },
+  { city: 'Bangalore', category: 'music', tickets: 1, price: 1500 },
+  { city: 'Mumbai', category: 'comedy', tickets: 4, price: 600 },
+];
+const SAMPLE_NODE = { type: 'div', props: { className: 'card', onClick: 'steal()' }, children: [{ type: 'h3', children: 'Stand-up <night>' }, { type: 'a', props: { href: 'javascript:alert(1)' }, children: 'Book' }] };
+
+const field = (id, label, value, wide) => `<div><label for="${id}">${label}</label><input id="${id}" value="${value.replace(/"/g, '&quot;')}"${wide ? ' class="wide"' : ''}></div>`;
+const ops = {
+  get: { label: 'get', sample: SAMPLE_EVENT, args: () => field('a-path', 'path', 'venue.seats[1].price', true) + field('a-def', 'default', 'n/a'),
+    run: (x) => lib.get(x, val('a-path'), val('a-def')), note: 'Try a path that does not exist, or one that ends on a falsy value.' },
+  setIn: { label: 'setIn (immutable)', sample: SAMPLE_EVENT, args: () => field('a-path', 'path', 'venue.seats[0].price', true) + field('a-val', 'value (JSON)', '599'),
+    run: (x) => ({ __sharing: true, before: x, after: lib.setIn(x, val('a-path'), JSON.parse(val('a-val'))) }), note: 'Orange keys were copied along the path; green ones are the same objects as before.' },
+  flatten: { label: 'flatten', sample: SAMPLE_EVENT, args: () => `<div><label for="a-arr">arrays</label><select id="a-arr"><option value="index">by index</option><option value="keep">keep as values</option></select></div>`,
+    run: (x) => lib.flatten(x, { arrays: val('a-arr') }), note: 'Empty objects and arrays stay as leaves, so nothing is lost on the way back.' },
+  unflatten: { label: 'unflatten', sample: lib.flatten(SAMPLE_EVENT), args: () => '',
+    run: (x) => lib.unflatten(x), note: 'Numeric segments become array indexes.' },
+  filterDeep: { label: 'filterDeep', sample: SAMPLE_EVENT, args: () => `<div><label for="a-kind">keep leaves that are</label><select id="a-kind"><option value="number">numbers</option><option value="string">strings</option><option value="boolean">booleans</option><option value="text">strings containing…</option></select></div>` + field('a-text', 'text', 'a'),
+    run: (x) => { const k = val('a-kind'), t = val('a-text').toLowerCase(); const r = lib.filterDeep(x, (v) => (k === 'text' ? typeof v === 'string' && v.toLowerCase().includes(t) : typeof v === k)); return r === undefined ? '(nothing kept)' : r; },
+    note: 'Branches with nothing left in them disappear.' },
+  deepEqual: { label: 'deepEqual', sample: SAMPLE_EVENT, args: () => field('a-path', 'change this path in a copy', 'organiser.contact', true) + field('a-val', 'to (JSON, blank = unchanged)', ''),
+    run: (x) => { const other = val('a-val').trim() ? lib.setIn(x, val('a-path'), JSON.parse(val('a-val'))) : JSON.parse(JSON.stringify(x)); return { equal: lib.deepEqual(x, other), compared: other }; },
+    note: 'With the value blank it compares against a fresh copy, so it should say true.' },
+  listToTree: { label: 'listToTree', sample: SAMPLE_LIST, args: () => '', run: (x) => lib.listToTree(x), note: 'Try making two items each other\'s parent.' },
+  groupAggregate: { label: 'groupAggregate', sample: SAMPLE_SALES, args: () => field('a-keys', 'group by (comma separated)', 'city, category', true) + field('a-metrics', 'metrics (JSON)', '{"tickets":"sum","price":"avg"}', true),
+    run: (x) => lib.groupAggregate(x, val('a-keys').split(',').map((s) => s.trim()).filter(Boolean), JSON.parse(val('a-metrics'))), note: 'Composite keys are JSON-encoded so values containing separators never collide.' },
+  toHtml: { label: 'toHtml', sample: SAMPLE_NODE, args: () => '', run: (x) => ({ __text: lib.toHtml(x) }), note: 'Text is escaped, the onClick prop is dropped and the javascript: link loses its href.' },
+};
+let op = 'setIn';
+const val = (id) => document.getElementById(id)?.value ?? '';
+const input = document.getElementById('input'), output = document.getElementById('output'), statusEl = document.getElementById('status');
+const opsEl = document.getElementById('ops'), argsEl = document.getElementById('args');
+
+Object.entries(ops).forEach(([k, o]) => {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = o.label; b.dataset.op = k;
+  b.addEventListener('click', () => selectOp(k, true)); opsEl.appendChild(b);
+});
+function selectOp(k, resetInput) {
+  op = k;
+  [...opsEl.children].forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.op === k)));
+  argsEl.innerHTML = ops[k].args();
+  argsEl.querySelectorAll('input, select').forEach((el) => el.addEventListener('input', run));
+  if (resetInput) input.value = JSON.stringify(ops[k].sample, null, 2);
+  run();
+}
+
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+// Pretty-print `after`, colouring each object key by whether its value is the same reference as in `before`
+function sharingView(before, after, indent = '') {
+  if (after === null || typeof after !== 'object') return esc(JSON.stringify(after));
+  const isArr = Array.isArray(after);
+  const entries = Object.entries(after);
+  if (!entries.length) return isArr ? '[]' : '{}';
+  const pad = indent + '  ';
+  const lines = entries.map(([k, v]) => {
+    const prev = before != null && typeof before === 'object' ? before[k] : undefined;
+    const same = v !== null && typeof v === 'object' ? v === prev : Object.is(v, prev);
+    const cls = same ? 'k-shared' : 'k-copied';
+    const label = isArr ? '' : `<span class="${cls}">${esc(JSON.stringify(k))}</span>: `;
+    const body = same && v !== null && typeof v === 'object' ? `<span class="k-shared">${Array.isArray(v) ? '[…]' : '{…}'} shared</span>` : sharingView(prev, v, pad);
+    return pad + (isArr && !same ? `<span class="k-copied">${body}</span>` : label + body);
+  });
+  return (isArr ? '[' : '{') + '\n' + lines.join(',\n') + '\n' + indent + (isArr ? ']' : '}');
+}
+
+function run() {
+  let data;
+  try { data = JSON.parse(input.value); input.setAttribute('aria-invalid', 'false'); }
+  catch (e) { input.setAttribute('aria-invalid', 'true'); statusEl.className = 'status-line error'; statusEl.textContent = 'Input is not valid JSON: ' + e.message; return; }
+  try {
+    const result = ops[op].run(data);
+    if (result && result.__sharing) {
+      output.innerHTML = sharingView(result.before, result.after);
+      document.getElementById('out-label').textContent = 'Result (orange = copied, green = shared)';
+    } else {
+      document.getElementById('out-label').textContent = 'Result';
+      output.textContent = result && result.__text !== undefined ? result.__text : typeof result === 'string' ? result : JSON.stringify(result, (k, v) => (v === undefined ? '(undefined)' : v), 2);
+    }
+    statusEl.className = 'status-line'; statusEl.textContent = ops[op].note;
+  } catch (e) {
+    output.textContent = '';
+    statusEl.className = 'status-line error'; statusEl.textContent = e.message;
+  }
+}
+input.addEventListener('input', run);
+selectOp(op, true);
+</script>
